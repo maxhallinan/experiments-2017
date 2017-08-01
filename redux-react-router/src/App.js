@@ -1,14 +1,15 @@
 import React from 'react';
-import { connect, } from 'react-redux';
 import { Link, Route, } from 'react-router-dom';
 
 function Nav() {
   return (
     <nav>
-      <Link to="/">Home</Link>{" "}
-      <Link to="/foo">Foo</Link>{" "}
-      <Link to="/bar">Bar</Link>{" "}
-      <Link to="/baz">Baz</Link>
+      <ul>
+        <li><Link to="/">Home</Link></li>
+        <li><Link to="/foo">Foo</Link></li>
+        <li><Link to="/bar">Bar</Link></li>
+        <li><Link to="/baz">Baz</Link></li>
+      </ul>
     </nav>
   );
 }
@@ -21,19 +22,22 @@ function Body(props) {
   );  
 }
 
-const Home = connect(() => ({ pageName: 'Home'}))(Body);
-const Foo = connect(() => ({ pageName: 'Foo'}))(Body);
-const Bar = connect(() => ({ pageName: 'Bar'}))(Body);
-const Baz = connect(() => ({ pageName: 'Baz'}))(Body);
+function Page(props) {
+  const { match, } = props;
+
+  return (
+    <Body pageName={match.path} /> 
+  );
+}
 
 function App() {
   return (
     <div>
       <Nav />
-      <Route exact path="/" component={Home} />
-      <Route path="/foo" component={Foo} />
-      <Route path="/bar" component={Bar} />
-      <Route path="/baz" component={Baz} />
+      <Route exact path="/" component={Page} />
+      <Route path="/foo" component={Page} />
+      <Route path="/bar" component={Page} />
+      <Route path="/baz" component={Page} />
     </div>
   );
 }
