@@ -15,6 +15,10 @@ with Redux.
 
 ## Links
 
+**Documentation**
+
+- [Redux: Usage with React Router](http://redux.js.org/docs/advanced/UsageWithReactRouter.html)
+
 **You can't render a connected component between Router and Route**
 
 - [Gitub: React Router 4 (beta 8) won't render components if using redux connect #4671](https://github.com/ReactTraining/react-router/issues/4671)
