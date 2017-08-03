@@ -58,9 +58,7 @@ class Collection {
 }
 
 const titles = ['Foo', 'Bar', 'Baz'];
-
 const titlesToThings = title => ({ title, id: genId(), });
-
 const things = new Collection(titles.map(titlesToThings));
 
 
