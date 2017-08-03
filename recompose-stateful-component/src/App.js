@@ -1,11 +1,12 @@
-import React, { Component } from 'react';
-
-const StateLess = ({ title, }) => ();
+import { keyBy, } from 'lodash-fp';
+import React, { Component, } from 'react';
+import { compose, withHandlers, withState, } from 'recompose';
 
 class App extends Component {
   render() {
+
     return (
-      <h1>Page</h1>
+      <p>Page</p>
     );
   }
 }
