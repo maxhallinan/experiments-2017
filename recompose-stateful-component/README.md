@@ -1,6 +1,6 @@
 # recompose-stateful-component
 
-Experiments with the [recompose](https://github.com/acdlite/recompose) library.
+Managing component state with [recompose](https://github.com/acdlite/recompose) library.
 
 
 ## Links
