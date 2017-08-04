@@ -3,6 +3,7 @@
 
 ## Notes
 
+
 ### `Box`
 
 [./box.js](./box.js).
@@ -13,16 +14,18 @@
     - Functor could also be called Mappable.
 - Enables composing transformations of that value without storing intermediate values.
 
+
 #### Links
 
-**Articles**
+*Articles*
 
 - [Prof. Frisby, Chapter 8: The Mighty Container](https://drboolean.gitbooks.io/mostly-adequate-guide/content/ch8.html#the-mighty-container)
 
-**Tutorials**
+*Tutorials*
 
 - [Brian Lonsdorf, Egghead.io: Create linear data flow with container types (Box)](https://egghead.io/lessons/javascript-linear-data-flow-with-container-style-types-box)
 - [Brain Lonsdorf, Egghead.io: Refactoring imperative code to single compose expression using Box](https://egghead.io/lessons/javascript-refactoring-imperative-code-to-a-single-composed-expression-using-box)
+
 
 ### `Either`
 
@@ -39,13 +42,15 @@
   risking throwing an error.
 
 
-## Links
+#### Links
 
-**Articles**
+*Articles*
 
 - [Prof. Frisby, Chapter 8: Schroedinger's Maybe](https://drboolean.gitbooks.io/mostly-adequate-guide/content/ch8.html#schrödingers-maybe)
 
-**Tutorials**
+*Tutorials*
 
 - [Brian Lonsdorf, Egghead.io: Enforce a null check with composable code branching with Either](https://egghead.io/lessons/javascript-composable-code-branching-with-either)
 - [Brain Lonsdorf, Egghead.io: Use chain for composable error handling with Either](https://egghead.io/lessons/javascript-composable-error-handling-with-either)
+
+
