@@ -1,5 +1,7 @@
 # fp-containers
 
+Functional programming with composable container types.
+
 
 ## Notes
 
