@@ -8,7 +8,7 @@ Functional programming with composable container types.
 
 ### `Box`
 
-[./box.js](./box.js).
+[./box.js](./box.js)
 
 - Box can also be called Container or the Identity functor.
 - Box is a Functor.
@@ -29,9 +29,16 @@ Functional programming with composable container types.
 - [Brain Lonsdorf, Egghead.io: Refactoring imperative code to single compose expression using Box](https://egghead.io/lessons/javascript-refactoring-imperative-code-to-a-single-composed-expression-using-box)
 
 
+### `Maybe`
+
+[./maybe.js](./maybe.js)
+
+- A container type that handles possible `null` value.
+
+
 ### `Either`
 
-[./either.js](./either.js).
+[./either.js](./either.js)
 
 - `Either` is a type that returns one of two subtypes: `Right` or `Left`.
 - `Either` tests `x`. If the test succeeds, it returns `Right x` and if it fails, 
