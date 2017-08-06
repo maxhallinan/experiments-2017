@@ -3,10 +3,7 @@
 Functional programming with composable container types.
 
 
-## Notes
-
-
-### `Box`
+## `Box`
 
 [./box.js](./box.js)
 
@@ -17,7 +14,7 @@ Functional programming with composable container types.
 - Enables composing transformations of that value without storing intermediate values.
 
 
-#### Links
+### Links
 
 *Articles*
 
@@ -29,14 +26,14 @@ Functional programming with composable container types.
 - [Brain Lonsdorf, Egghead.io: Refactoring imperative code to single compose expression using Box](https://egghead.io/lessons/javascript-refactoring-imperative-code-to-a-single-composed-expression-using-box)
 
 
-### `Maybe`
+## `Maybe`
 
 [./maybe.js](./maybe.js)
 
 - A container type that handles possible `null` value.
 
 
-### `Either`
+## `Either`
 
 [./either.js](./either.js)
 
@@ -51,7 +48,7 @@ Functional programming with composable container types.
   risking throwing an error.
 
 
-#### Links
+### Links
 
 *Articles*
 
@@ -75,14 +72,14 @@ Functional programming with composable container types.
   - ex: 1 + (1 + 1) = (1 + 1) + 1 = 1 + 1 + 1
 
 
-#### Monoids
+### Monoids
 
 - A semi-group that contains a special neutral element acting like `identity`.
 - A semi-group type has a method like `empty` that returns that neutral element.
 - The value of the neutral element is that it provides a baseline for safe operation.
 
 
-#### Links
+### Links
 
 *Tutorials*
 
@@ -90,7 +87,7 @@ Functional programming with composable container types.
 - [Brian Lonsdorf, Egghead.io: A curated collection of Monoids and their uses](https://egghead.io/lessons/javascript-a-curated-collection-of-monoids-and-their-uses) 
 
 
-### `IO`
+## `IO`
 
 [./io.js](./io.js)
 
@@ -110,19 +107,19 @@ const pureGetLocalStorage = (k) => () => impureGetLocalStorage(k);
   function.
 
 
-#### Links
+### Links
 
 *Articles*
 
 - [Prof. Frisby, Chapter 8: Old McDonald Had Effects](https://drboolean.gitbooks.io/mostly-adequate-guide/content/ch8.html#old-mcdonald-had-effects)
 
 
-### Task
+## Task
 
 A Task represents values that depend on time.
 
 
-#### Notes
+### Notes
 
 - Pass the asynchronous action to Task.
 - Pass functions to `map` that describe what you want to do with the Task's
@@ -132,11 +129,11 @@ A Task represents values that depend on time.
   app's entry point.
 
 
-#### Links
+### Links
 
 *Libraries*
 
-- [folktale/data.tas](https://github.com/folktale/data.task)
+- [folktale/data.task](https://github.com/folktale/data.task)
 
 *Tutorials*
 
@@ -144,7 +141,7 @@ A Task represents values that depend on time.
 - [Brian Lonsdorf, Egghead.io: Using Task for Asynchronous Actions](https://egghead.io/lessons/javascript-using-task-for-asynchronous-actions)
 
 
-### Laws of Functors
+## Laws of Functors
 
 - A function has a `map` method.
 - A functor obeys some laws:
@@ -153,7 +150,7 @@ A Task represents values that depend on time.
   - `const identity = x => x; fx.map(identity) === identity(fx)`.
 
 
-#### Links
+### Links
 
 *Tutorials*
 
