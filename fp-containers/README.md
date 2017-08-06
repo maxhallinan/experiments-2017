@@ -115,3 +115,12 @@ const pureGetLocalStorage = (k) => () => impureGetLocalStorage(k);
 *Articles*
 
 - [Prof. Frisby, Chapter 8: Old McDonald Had Effects](https://drboolean.gitbooks.io/mostly-adequate-guide/content/ch8.html#old-mcdonald-had-effects)
+
+
+### Laws of Functors
+
+- A function has a `map` method.
+- A functor obeys some laws:
+  - `map` preserves function composition: 
+    `fx.map(x => f(x)).map(x => g(x)) === fx.map(x => g(f(x)))`.
+  - `const identity = x => x; fx.map(identity) === identity(fx)`.

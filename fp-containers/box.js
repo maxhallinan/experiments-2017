@@ -59,3 +59,15 @@ Container.prototype.fold = function (fn) {
 };
 
 console.log(Container.of(1).map(add(1)).fold(identity)); // -> 2
+
+const LazyBox = g => ({
+  inspect: () => `LazyBox(${g})`,
+  fold: (f) => f(g()),
+  map: (f) => LazyBox(() => f(g())),
+});
+
+const pureGetEnv = LazyBox(() => process).map(p => p.env);
+// nothing impure has happened yet because none of the functions have been called
+console.log(pureGetEnv); // LazyBox(() => f(g()))
+// finally pull the trigger and call the functions
+console.log(pureGetEnv.fold(e => e['EDITOR'])); // 'vim'
