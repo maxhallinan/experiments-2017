@@ -73,3 +73,45 @@ Functional programming with composable container types.
 - `concat` is associative: the result of the combination is the same no matter
   how the operation is grouped.
   - ex: 1 + (1 + 1) = (1 + 1) + 1 = 1 + 1 + 1
+
+
+#### Monoids
+
+- A semi-group that contains a special neutral element acting like `identity`.
+- A semi-group type has a method like `empty` that returns that neutral element.
+- The value of the neutral element is that it provides a baseline for safe operation.
+
+
+#### Links
+
+*Tutorials*
+
+- [Brian Lonsdorf, Egghead.io: Ensure failsafe combination with monoids](https://egghead.io/lessons/javascript-failsafe-combination-using-monoids)
+- [Brian Lonsdorf, Egghead.io: A curated collection of Monoids and their uses](https://egghead.io/lessons/javascript-a-curated-collection-of-monoids-and-their-uses) 
+
+
+### `IO`
+
+[./io.js](./io.js)
+
+- Impure functions become 'pure' when they are wrapped in a function.
+
+```
+const impureGetLocalStorage = (k) => localStorage.getItem(k);
+
+// given the same input `k` always gets the same output, a function that applies
+// `k` to `impureGetLocalStorage`.
+const pureGetLocalStorage = (k) => () => impureGetLocalStorage(k);
+```
+
+- `IO` delays an impure action by capturing it in a function wrapper.
+- Reason about the value contained by `IO` as the wrapped value and not the 
+  wrapper, even though strictly speaking the value contained by `IO` is always a
+  function.
+
+
+#### Links
+
+*Articles*
+
+- [Prof. Frisby, Chapter 8: Old McDonald Had Effects](https://drboolean.gitbooks.io/mostly-adequate-guide/content/ch8.html#old-mcdonald-had-effects)
