@@ -63,3 +63,13 @@ Functional programming with composable container types.
 - [Brain Lonsdorf, Egghead.io: Use chain for composable error handling with Either](https://egghead.io/lessons/javascript-composable-error-handling-with-either)
 
 
+## Semi-groups
+
+[./semi-groups.js](./semi-groups.js)
+
+- Semi-groups are used for combining things.
+- A Semi-group is a type with a `concat` method.
+  - `String` and `Array` are both semi-groups
+- `concat` is associative: the result of the combination is the same no matter
+  how the operation is grouped.
+  - ex: 1 + (1 + 1) = (1 + 1) + 1 = 1 + 1 + 1
