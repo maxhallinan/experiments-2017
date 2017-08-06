@@ -117,6 +117,33 @@ const pureGetLocalStorage = (k) => () => impureGetLocalStorage(k);
 - [Prof. Frisby, Chapter 8: Old McDonald Had Effects](https://drboolean.gitbooks.io/mostly-adequate-guide/content/ch8.html#old-mcdonald-had-effects)
 
 
+### Task
+
+A Task represents values that depend on time.
+
+
+#### Notes
+
+- Pass the asynchronous action to Task.
+- Pass functions to `map` that describe what you want to do with the Task's
+  eventual value.
+- Use `chain` to create a synchronous sequence of multiple asynchronous actions.
+- Finally call `fork` to observe the effect(s). This is best done by the 
+  app's entry point.
+
+
+#### Links
+
+*Libraries*
+
+- [folktale/data.tas](https://github.com/folktale/data.task)
+
+*Tutorials*
+
+- [Brian Lonsdorf, Egghead.io: Capturing Side Effects in a Task](https://egghead.io/lessons/javascript-capturing-side-effects-in-a-task)
+- [Brian Lonsdorf, Egghead.io: Using Task for Asynchronous Actions](https://egghead.io/lessons/javascript-using-task-for-asynchronous-actions)
+
+
 ### Laws of Functors
 
 - A function has a `map` method.
@@ -124,3 +151,10 @@ const pureGetLocalStorage = (k) => () => impureGetLocalStorage(k);
   - `map` preserves function composition: 
     `fx.map(x => f(x)).map(x => g(x)) === fx.map(x => g(f(x)))`.
   - `const identity = x => x; fx.map(identity) === identity(fx)`.
+
+
+#### Links
+
+*Tutorials*
+
+- [Brian Lonsdorf, Egghead.io: You've been using Functors](https://egghead.io/lessons/javascript-you-ve-been-using-functors)
