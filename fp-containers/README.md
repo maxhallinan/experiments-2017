@@ -116,6 +116,8 @@ const pureGetLocalStorage = (k) => () => impureGetLocalStorage(k);
 
 ## Task
 
+[./task.js](./task.js)
+
 A Task represents values that depend on time.
 
 
@@ -155,3 +157,17 @@ A Task represents values that depend on time.
 *Tutorials*
 
 - [Brian Lonsdorf, Egghead.io: You've been using Functors](https://egghead.io/lessons/javascript-you-ve-been-using-functors)
+
+
+## Monads
+
+[./monads.js](./monads.js)
+
+
+Contract:
+
+- Has an `of` method.
+  - Sometimes called `pure`.
+- Has a `chain` method.
+  - `chain` joins two types together.
+  - Sometimes called `flatMap`, `bind`, or `>>=`.
