@@ -171,3 +171,11 @@ Contract:
 - Has a `chain` method.
   - `chain` joins two types together.
   - Sometimes called `flatMap`, `bind`, or `>>=`.
+
+
+## Applicative Functors
+
+[./applicative-functors](./applicative-functors.js)
+
+- Has an `ap` method
+- Law: `F(x).map(f) === F(f).ap(F(x))`
