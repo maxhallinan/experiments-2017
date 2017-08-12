@@ -37,5 +37,6 @@ const comp = List.of(listComp)
   .ap(List(zs))
   .foldMap(x => [ x ]);
 
+// should be equivalent arrays
 console.log(xyzs);
 console.log(comp);
