@@ -179,3 +179,10 @@ Contract:
 
 - Has an `ap` method
 - Law: `F(x).map(f) === F(f).ap(F(x))`
+
+
+## Natural Transformations
+
+- A natural transformation is a type conversion.
+- A natural transformation takes in one type and returns a second type.
+- A natural transformation must follow this law: `nt(x).map(f) = nt(x.map(f))`.
