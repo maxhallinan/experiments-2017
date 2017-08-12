@@ -2,7 +2,7 @@ const Task = require('data.task');
 const fs = require('fs');
 // turns a callback-style function into a future
 const { futurize } = require('futurize');
-const { List, } = require('immutable-ext');
+const { List, Map, } = require('immutable-ext');
 
 const future = futurize(Task);
 const readFile = future(fs.readFile);
@@ -35,3 +35,22 @@ Task.of(p1 => p2 => reportHeader(p1, p2))
 const paths = List([ 'mock-config.json', 'mock-config-2.json', ]);
 const files = paths.traverse(Task.of, path => readFile(path, 'utf-8'))
   .fork(logErr, logRes);
+
+const httpGet = (path, params) =>
+  Task.of(`${path}: result`);
+
+const routes = {
+  index: `/`,
+  foo: `/foo`,
+  fooBar: `/foo/bar`,
+};
+
+// Map.map preserves the key names and updates the values
+// the result here is `Map { k: path } -> { k: Task res }`
+const results = Map(routes).map(route => httpGet(route, {}));
+
+// improve this by using traverse
+const results2 = Map(routes)
+  .traverse(Task.of, route => httpGet(route, {}))
+  .fork(logErr, logRes);
+
