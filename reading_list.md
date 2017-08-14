@@ -6,6 +6,7 @@
 - [Constraints](http://tagide.com/blog/research/constraints/)
 - [Kliesli Compositions in JavaScript](https://medium.com/@luijar/kliesli-compositions-in-javascript-7e1a7218f0c4)
 - [Cancelation without breaking a Promise](https://hackernoon.com/considering-cancelation-a96e0f3c2298)
+- [Text is Keeping Kids from Coding](https://medium.com/@dannyyaroslavski/text-is-keeping-kids-from-coding-b70988dd7541)
 
 ## Have read
 
