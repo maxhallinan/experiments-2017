@@ -161,3 +161,57 @@ let searchStr: StrSearch;
 searchStr = (src: string, sub: string): boolean =>
   src.search(sub) > -1;
 ```
+
+
+#### Generics
+
+```typescript
+const identity = <X>(x: X): X => x;
+```
+
+- A type variable represents the type of a value without specifying the type. 
+- The compiler infers the type from the type of the value passed in its place.
+
+```typescript
+const logLength = <X>(x: X): X => {
+  console.log(x.length); // Error: X doesn't have a .length
+
+  return x;
+};
+```
+
+- The compiler can't be sure that every value passed to this function has a `.length`
+  property.
+
+Solutions:
+
+```typescript
+const logLength = <X>(x: X[]): X[] => {
+  console.log(x.length); // the compiler knows that x has a .length property
+
+  return x;
+};
+```
+
+```typescript
+interface Lengthwise {
+  length: number;
+}
+
+const logLength = <X extends Lengthwise>(x: X) => {
+  console.log(x.length);
+
+  return x;
+};
+```
+
+
+#### Generic types
+
+```typescript
+interface GenericIdentity  {
+  <X>(x: X): X;
+}
+
+const identity: GenericIdentity = x => x;
+```

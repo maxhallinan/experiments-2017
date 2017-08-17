@@ -9,3 +9,11 @@ ReactDOM.render(
   document.getElementById('root') as HTMLElement
 );
 registerServiceWorker();
+
+interface GenericIdentity {
+  <X>(x: X): X;
+}
+
+const identity: GenericIdentity = x => x;
+
+console.log(identity(1));
