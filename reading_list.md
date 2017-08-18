@@ -12,8 +12,14 @@
 - [A Monad in Practicality: First-Class Failures](http://robotlolita.me/2013/12/08/a-monad-in-practicality-first-class-failures.html)
 - [Don't fear the Monads](https://channel9.msdn.com/Shows/Going+Deep/Brian-Beckman-Dont-fear-the-Monads)
 
-## Have read
 
+## Have read
 
 - [Why the Hipsters Recompose Everything](https://medium.com/javascript-inside/why-the-hipsters-recompose-everything-23ac08748198)
 - [The Hikikomori's Guide to JavaScript](http://robotlolita.me/2013/04/27/the-hikikomoris-guide-to-javascript.html)
+
+
+## Resources
+
+- [folktale](https://github.com/folktale)
+- [daggy](https://www.npmjs.com/package/daggy)
