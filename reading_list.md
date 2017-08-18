@@ -8,6 +8,7 @@
 - [Cancelation without breaking a Promise](https://hackernoon.com/considering-cancelation-a96e0f3c2298)
 - [Text is Keeping Kids from Coding](https://medium.com/@dannyyaroslavski/text-is-keeping-kids-from-coding-b70988dd7541)
 - [Why We Chose TypeScript](https://redditblog.com/2017/06/30/why-we-chose-typescript/)
+- [Functors in a dynamically typed language like JavaScript](https://medium.com/@iquardt/functors-in-a-dynamically-typed-language-like-javascript-ed2c8889db)
 
 ## Have read
 
