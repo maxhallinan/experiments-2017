@@ -10,6 +10,7 @@
 - [Functors in a dynamically typed language like JavaScript](https://medium.com/@iquardt/functors-in-a-dynamically-typed-language-like-javascript-ed2c8889db)
 - [A Monad in Practicality: First-Class Failures](http://robotlolita.me/2013/12/08/a-monad-in-practicality-first-class-failures.html)
 - [Don't fear the Monads](https://channel9.msdn.com/Shows/Going+Deep/Brian-Beckman-Dont-fear-the-Monads)
+- [Code splitting in create-react-app](http://serverless-stack.com/chapters/code-splitting-in-create-react-app.html)
 
 
 ## Have read
