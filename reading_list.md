@@ -8,6 +8,9 @@
 - [A Monad in Practicality: First-Class Failures](http://robotlolita.me/2013/12/08/a-monad-in-practicality-first-class-failures.html)
 - [Don't fear the Monads](https://channel9.msdn.com/Shows/Going+Deep/Brian-Beckman-Dont-fear-the-Monads)
 - [Code splitting in create-react-app](http://serverless-stack.com/chapters/code-splitting-in-create-react-app.html)
+- [Designing APIs for Asynchrony](http://blog.izs.me/post/59142742143/designing-apis-for-asynchrony)
+- [Callbacks, synchronous and asynchronous](https://blog.ometer.com/2011/07/24/callbacks-synchronous-and-asynchronous/)
+- [Building a better promise](https://medium.com/@dtipson/building-a-better-promise-3dd366f80c16)
 
 
 ## Have read
