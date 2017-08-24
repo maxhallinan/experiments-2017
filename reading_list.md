@@ -9,7 +9,6 @@
 - [Don't fear the Monads](https://channel9.msdn.com/Shows/Going+Deep/Brian-Beckman-Dont-fear-the-Monads)
 - [Code splitting in create-react-app](http://serverless-stack.com/chapters/code-splitting-in-create-react-app.html)
 - [Designing APIs for Asynchrony](http://blog.izs.me/post/59142742143/designing-apis-for-asynchrony)
-- [Callbacks, synchronous and asynchronous](https://blog.ometer.com/2011/07/24/callbacks-synchronous-and-asynchronous/)
 - [Building a better promise](https://medium.com/@dtipson/building-a-better-promise-3dd366f80c16)
 
 
@@ -21,6 +20,7 @@
 - [Constraints](http://tagide.com/blog/research/constraints/)
 - [Text is Keeping Kids from Coding](https://medium.com/@dannyyaroslavski/text-is-keeping-kids-from-coding-b70988dd7541)
 - [Why We Chose TypeScript](https://redditblog.com/2017/06/30/why-we-chose-typescript/)
+- [Callbacks, synchronous and asynchronous](https://blog.ometer.com/2011/07/24/callbacks-synchronous-and-asynchronous/)
 
 ## Resources
 
