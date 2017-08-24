@@ -11,6 +11,7 @@
 - [Designing APIs for Asynchrony](http://blog.izs.me/post/59142742143/designing-apis-for-asynchrony)
 - [Building a better promise](https://medium.com/@dtipson/building-a-better-promise-3dd366f80c16)
 - [functors, applicatives, and monads: you don't need to know theory to use them](http://joyfulmantis.github.io/posts/2017-08-23-functors-applicatives-monads.html)
+- [Typing Higher Order Components](http://lewisf.com/typing-higher-order-components/)
 
 
 ## Have read
