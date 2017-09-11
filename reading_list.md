@@ -12,6 +12,7 @@
 - [Building a better promise](https://medium.com/@dtipson/building-a-better-promise-3dd366f80c16)
 - [functors, applicatives, and monads: you don't need to know theory to use them](http://joyfulmantis.github.io/posts/2017-08-23-functors-applicatives-monads.html)
 - [Typing Higher Order Components](http://lewisf.com/typing-higher-order-components/)
+- [Learn FP with React part 1](https://jaysoo.ca/2017/04/30/learn-fp-with-react-part-1/)
 
 
 ## Have read
