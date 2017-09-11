@@ -25,6 +25,7 @@
 - [Callbacks, synchronous and asynchronous](https://blog.ometer.com/2011/07/24/callbacks-synchronous-and-asynchronous/)
 - [My first fifteen compilers](http://composition.al/blog/2017/07/31/my-first-fifteen-compilers/)
 - [Hacker News: You are not 'behind'](https://news.ycombinator.com/item?id=15155202)
+- [Redux/ React Router: redirecting inside an action creator](https://github.com/ReactTraining/react-router/issues/3498#issuecomment-295151161)
 
 ## Resources
 
