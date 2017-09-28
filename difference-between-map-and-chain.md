@@ -28,7 +28,7 @@ why this notation is useful for expressing abstractions.
 
 These type signatures are mostly identical. Both start with a type variable: `f`
 or `m`. A type variable can stand for any type, just as a variable name can stand
-for any value. Unfortunately, `f` and `m` in the context of `map` and `chain` 
+for any value. But, `f` and `m` in the context of `map` and `chain` 
 aren't just *any* type. So the type signatures place a constraint on `f` and 
 `m` using the `=>` notation.
 
@@ -68,9 +68,10 @@ m a ~>
 Likewise, `chain` is a method of `m`.
 
 Here we notice a second type variable `a`. `a` here really is any type. The type
-signature does not place any constraints. This is because the type is unimportant.
-In fact, we prefer not to think about its type here. We just want to know that 
-each of our types is holding some value. This is expressed as `f a` and `m a`.
+signature does not place any constraints on the type of `a`. This is because 
+the type of `a` is unimportant. In fact, we prefer not to think about its type here. 
+We just want to know that each of our types is holding some value. 
+This is expressed as `f a` and `m a`.
 
 Let's skip to the signature ends for a moment. You might notice that both 
 type signatures end in (nearly) the same way.
@@ -108,9 +109,9 @@ on: `f b` for `map` and `m b` for `chain`.
 (a -> b)
 ```
 
-`map` simply transforms `a` to `b`. It does not know anything about type `f`. So
+The `map` function simply transforms `a` to `b`. It does not know anything about type `f`. So
 the `map` method itself is responsible for finally putting `b` into `f` in order
-to satisfy the return signature `f b`.
+to satisfy the return type `f b`.
 
 **chain**
 
@@ -118,9 +119,10 @@ to satisfy the return signature `f b`.
 (a -> m b)
 ```
 
-`chain` transforms `a` to `b` *and* puts `b` into the correct type. Because this
-function returns `m b` and because `chain` returns `m b`, we know that `chain` 
-itself, unlike `map` is not doing anything to the return value of this function. 
+The `chain` function transforms `a` to `b` *and* puts `b` into the correct type. 
+Because this function returns `m b` and because `chain` returns `m b`, 
+we know that `chain` itself, unlike `map` is not doing anything to the return 
+value of this function. 
 
 What does all of this mean?
 
