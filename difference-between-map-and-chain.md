@@ -4,7 +4,7 @@ Fantasy Land specifies two algebraic structures: `Functor` and `Chain`. It is co
 to encounter algebraic data types which implement both specifications. The 
 `Maybe` and `Either` monads are two examples. Because implementations of `Functor` 
 and `Chain` so often coincide in the same type, it is (or might be) common 
-to see a mix of `map` and `chain`, and to wonder when should I chain and 
+to see a mix of `map` and `chain` calls, and to wonder when should I chain and 
 when should I map?
 
 The similarities and differences between these two methods are expressed by 
