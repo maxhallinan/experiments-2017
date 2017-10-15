@@ -14,7 +14,7 @@ model =
 
 
 update msg model =
-    if msg.operation === "SHOW_MORE" then
+    if msg.operation == "SHOW_MORE" then
         { maxResults = model.maxResults + msg.data }
     else
         model
@@ -37,7 +37,8 @@ main =
                     , a [ href ("https://github.com/" ++ model.result.name) ]
                         [ text model.result.name ]
                     ]
-
-                -- TODO create a link to the project
                 ]
+            , button
+                [ onClick { operation = "SHOW_MORE", data = 10 } ]
+                [ text "Show more" ]
             ]
