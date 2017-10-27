@@ -34,3 +34,6 @@
 
 - [folktale](https://github.com/folktale)
 - [daggy](https://www.npmjs.com/package/daggy)
+
+## Miscellaneous
+- [Reddit: Evan Czaplicki on Beginners and Community Culture](https://www.reddit.com/r/elm/comments/678x0t/elm_debugging_is_not_easy/dgpi4wk/)
