@@ -31,6 +31,7 @@
 - [So you want to build a generator](http://galaxykate0.tumblr.com/post/139774965871/so-you-want-to-build-a-generator)
 - [Tracery Tutorial](http://www.crystalcodepalace.com/traceryTut.html)
 - [Context-Free Grammars](https://www.cs.rochester.edu/~nelson/courses/csc_173/grammars/cfg.html)
+- [Grammar as Data Types](http://languagengine.co/blog/grammars-as-data-types/)
 
 ## Resources
 
