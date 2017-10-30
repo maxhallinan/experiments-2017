@@ -4,7 +4,7 @@
 
 - [Kliesli Compositions in JavaScript](https://medium.com/@luijar/kliesli-compositions-in-javascript-7e1a7218f0c4)
 - [Cancelation without breaking a Promise](https://hackernoon.com/considering-cancelation-a96e0f3c2298)
-- [Functors in a dynamically typed language like JavaScript](https://medium.com/@iquardt/functors-in-a-dynamically-typed-language-like-javascript-ed2c8889db)
+- [Fuhttp://www.storyteller-game.com/nctors in a dynamically typed language like JavaScript](https://medium.com/@iquardt/functors-in-a-dynamically-typed-language-like-javascript-ed2c8889db)
 - [A Monad in Practicality: First-Class Failures](http://robotlolita.me/2013/12/08/a-monad-in-practicality-first-class-failures.html)
 - [Don't fear the Monads](https://channel9.msdn.com/Shows/Going+Deep/Brian-Beckman-Dont-fear-the-Monads)
 - [Code splitting in create-react-app](http://serverless-stack.com/chapters/code-splitting-in-create-react-app.html)
@@ -32,6 +32,7 @@
 - [Tracery Tutorial](http://www.crystalcodepalace.com/traceryTut.html)
 - [Context-Free Grammars](https://www.cs.rochester.edu/~nelson/courses/csc_173/grammars/cfg.html)
 - [Grammar as Data Types](http://languagengine.co/blog/grammars-as-data-types/)
+- [Storyteller game](http://www.storyteller-game.com/)
 
 ## Resources
 
