@@ -33,6 +33,7 @@
 - [Context-Free Grammars](https://www.cs.rochester.edu/~nelson/courses/csc_173/grammars/cfg.html)
 - [Grammar as Data Types](http://languagengine.co/blog/grammars-as-data-types/)
 - [Storyteller game](http://www.storyteller-game.com/)
+- [Tracery: An Author-Focused Generative Text Tool](https://link.springer.com/chapter/10.1007/978-3-319-27036-4_14)
 
 ## Resources
 
