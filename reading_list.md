@@ -23,13 +23,12 @@
 - [Hacker News: You are not 'behind'](https://news.ycombinator.com/item?id=15155202)
 - [Constraints](http://tagide.com/blog/research/constraints/)
 - [Redux / React Router: redirecting inside an action creator](https://github.com/ReactTraining/react-router/issues/3498#issuecomment-295151161)
-
+- [Tracery Tutorial](http://www.crystalcodepalace.com/traceryTut.html)
 
 ## Have read
 
 - [The Hikikomori's Guide to JavaScript](http://robotlolita.me/2013/04/27/the-hikikomoris-guide-to-javascript.html)
 - [Grammar as Data Types](http://languagengine.co/blog/grammars-as-data-types/)
-- [Tracery Tutorial](http://www.crystalcodepalace.com/traceryTut.html)
 - [Tracery: An Author-Focused Generative Text Tool](https://link.springer.com/chapter/10.1007/978-3-319-27036-4_14)
 - [Text is Keeping Kids from Coding](https://medium.com/@dannyyaroslavski/text-is-keeping-kids-from-coding-b70988dd7541)
 
