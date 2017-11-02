@@ -31,6 +31,7 @@
 - [Grammar as Data Types](http://languagengine.co/blog/grammars-as-data-types/)
 - [Tracery: An Author-Focused Generative Text Tool](https://link.springer.com/chapter/10.1007/978-3-319-27036-4_14)
 - [Text is Keeping Kids from Coding](https://medium.com/@dannyyaroslavski/text-is-keeping-kids-from-coding-b70988dd7541)
+- [The Melting Pot of JavaScript](https://increment.com/development/the-melting-pot-of-javascript/)
 
 
 ## Resources
