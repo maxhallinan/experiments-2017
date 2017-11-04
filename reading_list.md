@@ -34,6 +34,7 @@
 - [Tracery: An Author-Focused Generative Text Tool](https://link.springer.com/chapter/10.1007/978-3-319-27036-4_14)
 - [Text is Keeping Kids from Coding](https://medium.com/@dannyyaroslavski/text-is-keeping-kids-from-coding-b70988dd7541)
 - [How does Babel even work?](https://www.youtube.com/watch?v=fntd0sPMOtQ)
+- [The social coding contract](http://blog.testdouble.com/posts/2014-12-02-the-social-coding-contract)
 
 
 ## Resources
