@@ -33,6 +33,7 @@
 - [The Hikikomori's Guide to JavaScript](http://robotlolita.me/2013/04/27/the-hikikomoris-guide-to-javascript.html)
 - [Tracery: An Author-Focused Generative Text Tool](https://link.springer.com/chapter/10.1007/978-3-319-27036-4_14)
 - [Text is Keeping Kids from Coding](https://medium.com/@dannyyaroslavski/text-is-keeping-kids-from-coding-b70988dd7541)
+- [How does Babel even work?](https://www.youtube.com/watch?v=fntd0sPMOtQ)
 
 
 ## Resources
