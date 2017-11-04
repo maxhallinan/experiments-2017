@@ -24,14 +24,15 @@
 - [Constraints](http://tagide.com/blog/research/constraints/)
 - [Redux / React Router: redirecting inside an action creator](https://github.com/ReactTraining/react-router/issues/3498#issuecomment-295151161)
 - [Tracery Tutorial](http://www.crystalcodepalace.com/traceryTut.html)
+- [The Melting Pot of JavaScript](https://increment.com/development/the-melting-pot-of-javascript/)
 
 ## Have read
 
-- [The Hikikomori's Guide to JavaScript](http://robotlolita.me/2013/04/27/the-hikikomoris-guide-to-javascript.html)
 - [Grammar as Data Types](http://languagengine.co/blog/grammars-as-data-types/)
+- [Your app makes me fat](http://seriouspony.com/blog/2013/7/24/your-app-makes-me-fat)
+- [The Hikikomori's Guide to JavaScript](http://robotlolita.me/2013/04/27/the-hikikomoris-guide-to-javascript.html)
 - [Tracery: An Author-Focused Generative Text Tool](https://link.springer.com/chapter/10.1007/978-3-319-27036-4_14)
 - [Text is Keeping Kids from Coding](https://medium.com/@dannyyaroslavski/text-is-keeping-kids-from-coding-b70988dd7541)
-- [The Melting Pot of JavaScript](https://increment.com/development/the-melting-pot-of-javascript/)
 
 
 ## Resources
