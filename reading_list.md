@@ -1,6 +1,6 @@
 # Reading List
 
-## To read
+## Have read
 
 - [Kliesli Compositions in JavaScript](https://medium.com/@luijar/kliesli-compositions-in-javascript-7e1a7218f0c4)
 - [Cancelation without breaking a Promise](https://hackernoon.com/considering-cancelation-a96e0f3c2298)
@@ -26,7 +26,7 @@
 - [Tracery Tutorial](http://www.crystalcodepalace.com/traceryTut.html)
 - [The Melting Pot of JavaScript](https://increment.com/development/the-melting-pot-of-javascript/)
 
-## Have read
+## To read
 
 - [Grammar as Data Types](http://languagengine.co/blog/grammars-as-data-types/)
 - [Your app makes me fat](http://seriouspony.com/blog/2013/7/24/your-app-makes-me-fat)
@@ -35,6 +35,15 @@
 - [Text is Keeping Kids from Coding](https://medium.com/@dannyyaroslavski/text-is-keeping-kids-from-coding-b70988dd7541)
 - [How does Babel even work?](https://www.youtube.com/watch?v=fntd0sPMOtQ)
 - [The social coding contract](http://blog.testdouble.com/posts/2014-12-02-the-social-coding-contract)
+- [https://web.hypothes.is/blog/annotation-is-now-a-web-standard/](http://orgmode.org/)
+- [Web Annotation Spec: Data model](https://www.w3.org/TR/annotation-model/#introduction)
+- [Web Annotation Spec: Vocabulary](https://www.w3.org/TR/annotation-vocab/#terminology)
+- [Hypothesis API docs](http://h.readthedocs.io/en/latest/api-reference/#)
+- [Hypothesis annotation tool](https://web.hypothes.is/)
+- [Note taking from the command line](https://dev.to/ricardomol/note-taking-from-the-command-line-156)
+- [HN: Annotation is now a web standard](https://news.ycombinator.com/item?id=13729525)
+- [Org mode](http://orgmode.org/)
+- [Pundit](http://net7.github.io/pundit2/)
 
 
 ## Resources
