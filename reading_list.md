@@ -44,7 +44,8 @@
 - [HN: Annotation is now a web standard](https://news.ycombinator.com/item?id=13729525)
 - [Org mode](http://orgmode.org/)
 - [Pundit](http://net7.github.io/pundit2/)
-
+- [Type Safe Routing - Baby Steps](http://rgrinberg.com/posts/primitive-type-safe-routing/)
+- [Formatting in Haskell](http://chrisdone.com/posts/formatting)
 
 ## Resources
 
