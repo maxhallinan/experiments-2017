@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "dat-node": "^3.5.5"
+  }
+}
