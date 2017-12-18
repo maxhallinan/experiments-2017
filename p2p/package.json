@@ -1,5 +1,11 @@
 {
   "dependencies": {
-    "pump": "^2.0.0"
+    "duplex-json-stream": "^1.0.1",
+    "lookup-multicast-dns": "^1.0.3",
+    "pump": "^2.0.0",
+    "register-multicast-dns": "^1.1.0"
+  },
+  "devDependencies": {
+    "stream-set": "^1.1.0"
   }
 }
