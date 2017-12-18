@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "pump": "^2.0.0"
+  }
+}
