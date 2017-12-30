@@ -3,10 +3,7 @@ const register = require('register-multicast-dns');
 const jsonStream = require('duplex-json-stream');
 const streamSet = require('stream-set');
 
-const host = process.argv[2];
-const port = process.argv[3];
-
-register(host);
+const hostname = process.argv[2];
 
 const activeSockets = streamSet();
 
@@ -22,4 +19,5 @@ const server = net.createServer(function (socket) {
   });
 });
 
-server.listen(port, host);
+register(hostname);
+server.listen(5000);

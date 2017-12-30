@@ -2,17 +2,15 @@ require('lookup-multicast-dns/global');
 const net = require('net');
 const jsonStream = require('duplex-json-stream');
 
-const nickname = process.argv[2];
-const host = process.argv[3];
-const port = process.argv[4];
+const nick = process.argv[2];
+const host = `${process.argv[3]}.local`;
 
-const connection = net.createConnection(port, host);
-const client = jsonStream(connection);
+const client = jsonStream(net.createConnection(5000, host));
 
 process.stdin.on('data', function (data) {
   client.write({
     msg: data.toString(),
-    nickname,
+    nick,
   })
 });
 
