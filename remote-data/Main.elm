@@ -1,7 +1,8 @@
 module Main exposing (..)
 
 import Dict exposing (Dict)
-import Html exposing (Html, text)
+import Html exposing (Html, button, li, ul, text)
+import Html.Events exposing (onClick)
 import Http
 import Json.Decode
 
@@ -17,6 +18,12 @@ main =
 
 
 -- Http
+
+
+getNamed : String -> Cmd Msg
+getNamed url =
+    Http.send NamedResponse <|
+        Http.get url decodeNamed
 
 
 getNameds : Cmd Msg
@@ -39,21 +46,6 @@ type alias Model =
     }
 
 
-type Cache a b c
-    = Empty (Health a) (Status b)
-    | Filled (Health a) (Status b) c
-
-
-type Health a
-    = Valid
-    | Invalid a
-
-
-type Status a
-    = Static
-    | Loading a
-
-
 type Source
     = Collection
     | Item Int
@@ -61,7 +53,70 @@ type Source
 
 type alias Named =
     { name : String
+    , url : String
     }
+
+
+type alias EmptyState a b =
+    { health : Health a
+    , sync : Sync b
+    }
+
+
+type alias FilledState a b c =
+    { health : Health a
+    , sync : Sync b
+    , data : c
+    }
+
+
+type Cache a b c
+    = Empty
+    | EmptyError a
+    | EmptySync b
+    | EmptyErrorSync a b
+    | Filled c
+    | FilledError a c
+    | FilledSync b c
+    | FilledErrorSync a b c
+
+
+type alias Foo =
+    { name : String
+    }
+
+
+
+-- Empty ->
+--   Health ->
+--     Sync ->
+-- Filled ->
+--   Health ->
+--     Sync ->
+-- emptyView
+
+
+type alias ItemCache =
+    Cache Http.Error Foo
+
+
+type alias CollectionCache =
+    Cache Http.Error (List Foo)
+
+
+type Cache a b c
+    = Empty (EmptyState a b)
+    | Filled (FilledState a b c)
+
+
+type Health a
+    = Valid
+    | Invalid a
+
+
+type Sync a
+    = Completed
+    | Pending a
 
 
 decodeName : Json.Decode.Decoder String
@@ -69,9 +124,14 @@ decodeName =
     Json.Decode.field "name" Json.Decode.string
 
 
+decodeUrl : Json.Decode.Decoder String
+decodeUrl =
+    Json.Decode.field "url" Json.Decode.string
+
+
 decodeNamed : Json.Decode.Decoder Named
 decodeNamed =
-    Json.Decode.map Named decodeName
+    Json.Decode.map2 Named decodeName decodeUrl
 
 
 decodeNameds : Json.Decode.Decoder (List Named)
@@ -100,6 +160,8 @@ subscriptions model =
 type Msg
     = NamedsRequest
     | NamedsResponse (Result Http.Error (List Named))
+    | NamedRequest String
+    | NamedRequest (Result Http.Error Named)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -114,25 +176,67 @@ update msg model =
         NamedsResponse (Ok ns) ->
             ( { model | nameds = Filled Valid Static ns }, Cmd.none )
 
+        NamedRequest url ->
+            ( model, getNamed url )
+
+        NamedResponse (Err e) ->
+            ( { model | nameds = Empty (Invalid e) Static }, Cmd.none )
+
+        NamedResponse (Ok n) ->
+            ( { model | nameds = Filled Valid Static ns }, Cmd.none )
+
 
 
 -- View
 
 
+itemView : Named -> Html Msg
+itemView named =
+    li
+        []
+        [ button
+            []
+            [ text named.name
+            ]
+        ]
+
+
+listView : List Named -> Html Msg
+listView nameds =
+    List.map itemView nameds
+        |> ul []
+
+
+
+-- emptyInvalidView : Cache Http.Error Source (List Named) -> Html Msg
+-- emptyInvalidView nameds =
+--     case nameds of
+--         Empty (Invalid e) (Pending Collection) ->
+--             emptyInvalidLoadingCollectionView e
+--         Empty (Invalid e) (Pending (Item id)) ->
+--             emptyInvalidLoadingItemView e id
+--         Empty (Invalid e) _ ->
+--             emptyInvalidErrorView e
+-- emptyView : Cache Http.Error Source (List Named) -> Html Msg
+-- emptyView nameds =
+--     case nameds of
+--         Empty Valid _ ->
+--             emptyValid
+--         Empty (Invalid e) _ ->
+--             emptyInvalidView nameds
+
+
 view : Model -> Html Msg
 view model =
     case model.nameds of
-        Empty Valid Static ->
-            text "NotAsked"
+        Empty error ->
+            text "Empty"
 
-        Empty Valid (Loading _) ->
+        Loading error nameds ->
             text "Loading"
 
-        Empty (Invalid _) _ ->
+        Failure error nameds ->
             text "Failure"
 
-        Filled Valid Static ns ->
-            text <| String.join " " <| List.map .name ns
-
-        _ ->
-            text "Unreachable state"
+        Success error nameds ->
+            text "Success"
