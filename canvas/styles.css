@@ -1,3 +1,7 @@
+.column {
+  margin: 0 auto;
+  width: 362px;
+}
 .canvas {
   border: 1px solid #222;
   font-size: 16px;
