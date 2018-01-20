@@ -1,7 +1,7 @@
 module Main exposing (..)
 
 import Dict exposing (Dict)
-import Html exposing (Html, button, li, p, text, ul)
+import Html exposing (Html, button, div, li, p, text, ul)
 import Html.Events exposing (onClick)
 import Http
 import Json.Decode
@@ -20,14 +20,14 @@ main =
 -- Http
 
 
-getPerson : String -> Cmd Msg
-getPerson url =
+getItem : String -> Cmd Msg
+getItem url =
     Http.send (ItemResponse url) <|
         Http.get url decodePerson
 
 
-getPersons : Cmd Msg
-getPersons =
+getCollection : Cmd Msg
+getCollection =
     Http.send CollectionResponse <|
         Http.get "https://swapi.co/api/people/" decodePersons
 
@@ -38,7 +38,7 @@ getPersons =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { persons = NotAsked }, getPersons )
+    ( { persons = NotAsked }, Cmd.none )
 
 
 type alias Model =
@@ -151,7 +151,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         CollectionRequest ->
-            ( { model | persons = Loading }, Cmd.none )
+            ( { model | persons = Loading }, getCollection )
 
         CollectionResponse (Err e) ->
             ( { model | persons = Failure e }, Cmd.none )
@@ -171,35 +171,67 @@ errorView error =
         ]
 
 
-itemView : Person -> Html Msg
-itemView named =
-    li
-        []
-        [ p
-            []
-            [ text named.name
-            ]
-        , button
-            [ onClick (ItemDetailsRequest "")
-            ]
-            [ text "Get details"
-            ]
-        , button
-            [ onClick (ItemErrorRequest "")
-            ]
-            [ text "Get error"
-            ]
-        ]
+itemView : RemoteData Http.Error Person -> Html Msg
+itemView person =
+    case person of
+        NotAsked ->
+            text "Person NotAsked"
+
+        Loading ->
+            text "Person Loading"
+
+        Failure _ ->
+            text "Person Error"
+
+        Success { name } ->
+            li
+                []
+                [ p
+                    []
+                    [ text ("Name: " ++ name)
+                    ]
+                , button
+                    [ onClick (ItemDetailsRequest "")
+                    ]
+                    [ text "Get details"
+                    ]
+                , button
+                    [ onClick (ItemErrorRequest "")
+                    ]
+                    [ text "Get error"
+                    ]
+                ]
 
 
-listView : List Person -> Html Msg
-listView nameds =
-    List.map itemView nameds
-        |> ul []
+filterNothing : Maybe a -> List a -> List a
+filterNothing mX xs =
+    case mX of
+        Just x ->
+            x :: xs
+
+        Nothing ->
+            xs
 
 
-view : Model -> Html Msg
-view model =
+filterNothings : List (Maybe a) -> List a
+filterNothings =
+    List.foldl filterNothing []
+
+
+listView : PersonCollection -> Html Msg
+listView { collection, displayOrder } =
+    let
+        getPersons =
+            flip Dict.get collection
+    in
+        List.map getPersons displayOrder
+            |> filterNothings
+            |> List.map itemView
+            |> ul []
+
+
+collectionView : Model -> Html Msg
+collectionView model =
     case model.persons of
         NotAsked ->
             text "Empty"
@@ -210,5 +242,26 @@ view model =
         Failure error ->
             text "Failure"
 
-        Success nameds ->
-            text "Success"
+        Success persons ->
+            listView persons
+
+
+view : Model -> Html Msg
+view model =
+    div
+        []
+        [ button
+            [ onClick CollectionRequest
+            ]
+            [ text "Get collection"
+            ]
+        , button
+            [ onClick CollectionErrorRequest
+            ]
+            [ text "Get collection error"
+            ]
+        , div
+            []
+            [ collectionView model
+            ]
+        ]
