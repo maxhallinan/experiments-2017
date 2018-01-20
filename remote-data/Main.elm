@@ -1,7 +1,7 @@
 module Main exposing (..)
 
 import Dict exposing (Dict)
-import Html exposing (Html, button, li, ul, text)
+import Html exposing (Html, button, li, p, text, ul)
 import Html.Events exposing (onClick)
 import Http
 import Json.Decode
@@ -20,16 +20,16 @@ main =
 -- Http
 
 
-getNamed : String -> Cmd Msg
-getNamed url =
-    Http.send NamedResponse <|
-        Http.get url decodeNamed
+getPerson : String -> Cmd Msg
+getPerson url =
+    Http.send (ItemResponse url) <|
+        Http.get url decodePerson
 
 
-getNameds : Cmd Msg
-getNameds =
-    Http.send NamedsResponse <|
-        Http.get "https://swapi.co/api/people/" decodeNameds
+getPersons : Cmd Msg
+getPersons =
+    Http.send CollectionResponse <|
+        Http.get "https://swapi.co/api/people/" decodePersons
 
 
 
@@ -38,85 +38,35 @@ getNameds =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { nameds = Empty Valid Static }, getNameds )
+    ( { persons = NotAsked }, getPersons )
 
 
 type alias Model =
-    { nameds : Cache Http.Error Source (List Named)
+    { persons : RemoteData Http.Error PersonCollection
     }
 
 
-type Source
-    = Collection
-    | Item Int
+type alias PersonCollection =
+    Collection (RemoteData Http.Error Person)
 
 
-type alias Named =
+type RemoteData a b
+    = NotAsked
+    | Loading
+    | Failure a
+    | Success b
+
+
+type alias Collection x =
+    { collection : Dict String x
+    , displayOrder : List String
+    }
+
+
+type alias Person =
     { name : String
     , url : String
     }
-
-
-type alias EmptyState a b =
-    { health : Health a
-    , sync : Sync b
-    }
-
-
-type alias FilledState a b c =
-    { health : Health a
-    , sync : Sync b
-    , data : c
-    }
-
-
-type Cache a b c
-    = Empty
-    | EmptyError a
-    | EmptySync b
-    | EmptyErrorSync a b
-    | Filled c
-    | FilledError a c
-    | FilledSync b c
-    | FilledErrorSync a b c
-
-
-type alias Foo =
-    { name : String
-    }
-
-
-
--- Empty ->
---   Health ->
---     Sync ->
--- Filled ->
---   Health ->
---     Sync ->
--- emptyView
-
-
-type alias ItemCache =
-    Cache Http.Error Foo
-
-
-type alias CollectionCache =
-    Cache Http.Error (List Foo)
-
-
-type Cache a b c
-    = Empty (EmptyState a b)
-    | Filled (FilledState a b c)
-
-
-type Health a
-    = Valid
-    | Invalid a
-
-
-type Sync a
-    = Completed
-    | Pending a
 
 
 decodeName : Json.Decode.Decoder String
@@ -129,14 +79,14 @@ decodeUrl =
     Json.Decode.field "url" Json.Decode.string
 
 
-decodeNamed : Json.Decode.Decoder Named
-decodeNamed =
-    Json.Decode.map2 Named decodeName decodeUrl
+decodePerson : Json.Decode.Decoder Person
+decodePerson =
+    Json.Decode.map2 Person decodeName decodeUrl
 
 
-decodeNameds : Json.Decode.Decoder (List Named)
-decodeNameds =
-    Json.Decode.field "results" (Json.Decode.list decodeNamed)
+decodePersons : Json.Decode.Decoder (List Person)
+decodePersons =
+    Json.Decode.field "results" (Json.Decode.list decodePerson)
 
 
 decodeError : Json.Decode.Decoder String
@@ -158,85 +108,107 @@ subscriptions model =
 
 
 type Msg
-    = NamedsRequest
-    | NamedsResponse (Result Http.Error (List Named))
-    | NamedRequest String
-    | NamedRequest (Result Http.Error Named)
+    = CollectionErrorRequest
+    | CollectionErrorResponse (Result Http.Error (List Person))
+    | CollectionRequest
+    | CollectionResponse (Result Http.Error (List Person))
+    | ItemDetailsRequest String
+    | ItemDetailsResponse (Result Http.Error Person)
+    | ItemErrorRequest String
+    | ItemErrorResponse (Result Http.Error Person)
+    | ItemRequest String
+    | ItemResponse String (Result Http.Error Person)
+
+
+type alias Url a =
+    { a | url : String }
+
+
+keyByUrl : Url a -> ( String, Url a )
+keyByUrl x =
+    ( x.url, x )
+
+
+toUrlDict : List (Url a) -> Dict String (Url a)
+toUrlDict xs =
+    List.map keyByUrl xs
+        |> Dict.fromList
+
+
+toSuccess : String -> Person -> RemoteData Http.Error Person
+toSuccess k person =
+    Success person
+
+
+refreshCollection : List Person -> PersonCollection
+refreshCollection persons =
+    { collection = Dict.map toSuccess <| toUrlDict persons
+    , displayOrder = List.map .url persons
+    }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        NamedsRequest ->
-            ( { model | nameds = Empty Valid (Loading Collection) }, Cmd.none )
+        CollectionRequest ->
+            ( { model | persons = Loading }, Cmd.none )
 
-        NamedsResponse (Err e) ->
-            ( { model | nameds = Empty (Invalid e) Static }, Cmd.none )
+        CollectionResponse (Err e) ->
+            ( { model | persons = Failure e }, Cmd.none )
 
-        NamedsResponse (Ok ns) ->
-            ( { model | nameds = Filled Valid Static ns }, Cmd.none )
+        CollectionResponse (Ok persons) ->
+            ( { model | persons = Success <| refreshCollection persons }, Cmd.none )
 
-        NamedRequest url ->
-            ( model, getNamed url )
-
-        NamedResponse (Err e) ->
-            ( { model | nameds = Empty (Invalid e) Static }, Cmd.none )
-
-        NamedResponse (Ok n) ->
-            ( { model | nameds = Filled Valid Static ns }, Cmd.none )
+        _ ->
+            ( model, Cmd.none )
 
 
+errorView : String -> Html Msg
+errorView error =
+    p
+        []
+        [ text "Error:"
+        ]
 
--- View
 
-
-itemView : Named -> Html Msg
+itemView : Person -> Html Msg
 itemView named =
     li
         []
-        [ button
+        [ p
             []
             [ text named.name
+            ]
+        , button
+            [ onClick (ItemDetailsRequest "")
+            ]
+            [ text "Get details"
+            ]
+        , button
+            [ onClick (ItemErrorRequest "")
+            ]
+            [ text "Get error"
             ]
         ]
 
 
-listView : List Named -> Html Msg
+listView : List Person -> Html Msg
 listView nameds =
     List.map itemView nameds
         |> ul []
 
 
-
--- emptyInvalidView : Cache Http.Error Source (List Named) -> Html Msg
--- emptyInvalidView nameds =
---     case nameds of
---         Empty (Invalid e) (Pending Collection) ->
---             emptyInvalidLoadingCollectionView e
---         Empty (Invalid e) (Pending (Item id)) ->
---             emptyInvalidLoadingItemView e id
---         Empty (Invalid e) _ ->
---             emptyInvalidErrorView e
--- emptyView : Cache Http.Error Source (List Named) -> Html Msg
--- emptyView nameds =
---     case nameds of
---         Empty Valid _ ->
---             emptyValid
---         Empty (Invalid e) _ ->
---             emptyInvalidView nameds
-
-
 view : Model -> Html Msg
 view model =
-    case model.nameds of
-        Empty error ->
+    case model.persons of
+        NotAsked ->
             text "Empty"
 
-        Loading error nameds ->
+        Loading ->
             text "Loading"
 
-        Failure error nameds ->
+        Failure error ->
             text "Failure"
 
-        Success error nameds ->
+        Success nameds ->
             text "Success"
