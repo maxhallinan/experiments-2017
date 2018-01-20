@@ -17,6 +17,25 @@ main =
 
 
 
+-- Helpers
+
+
+filterNothing : Maybe a -> List a -> List a
+filterNothing mX xs =
+    case mX of
+        Just x ->
+            x :: xs
+
+        Nothing ->
+            xs
+
+
+filterNothings : List (Maybe a) -> List a
+filterNothings =
+    List.foldl filterNothing []
+
+
+
 -- Http
 
 
@@ -38,29 +57,197 @@ getCollection =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { persons = NotAsked }, Cmd.none )
+    ( { persons = Empty }, Cmd.none )
 
 
 type alias Model =
-    { persons : RemoteData Http.Error PersonCollection
+    { persons : Cache Http.Error (Collection (Cache Http.Error Person))
     }
 
 
-type alias PersonCollection =
-    Collection (RemoteData Http.Error Person)
+type alias Collection a =
+    { entities : Dict String a
+    , displayOrder : List String
+    }
 
 
-type RemoteData a b
-    = NotAsked
-    | Loading
+type CacheEvent a b
+    = Sync
     | Failure a
     | Success b
 
 
-type alias Collection x =
-    { collection : Dict String x
-    , displayOrder : List String
+type Cache a b
+    = Empty
+    | EmptyInvalid a
+    | EmptySyncing
+    | EmptyInvalidSyncing a
+    | Filled b
+    | FilledSyncing b
+    | FilledInvalid a b
+    | FilledInvalidSyncing a b
+
+
+keyByUrl : Person -> ( String, Person )
+keyByUrl person =
+    ( person.url, person )
+
+
+createEntities : List Person -> Dict String (Cache Http.Error Person)
+createEntities persons =
+    List.map keyByUrl persons
+        |> List.map (\( url, p ) -> ( url, Filled p ))
+        |> Dict.fromList
+
+
+updateEntities : List Person -> Dict String (Cache Http.Error Person) -> Dict String (Cache Http.Error Person)
+updateEntities updates currentCache =
+    let
+        getCurrent =
+            flip Dict.get currentCache
+    in
+        -- key by url
+        List.map keyByUrl updates
+            |> List.map (\( url, person ) -> ( url, Success person ))
+            -- map each to success
+            |> List.map
+                (\( url, person ) ->
+                    ( url
+                    , updateCache
+                        { emptyToFilled = updateEmptyItem
+                        , filledToFilled = updateFilledItem
+                        }
+                        (Maybe.withDefault Empty <| getCurrent url)
+                        person
+                    )
+                )
+            |> Dict.fromList
+
+
+type alias PersonCollection =
+    Collection (Cache Http.Error Person)
+
+
+updateFilledItem : Person -> Person -> Person
+updateFilledItem current next =
+    next
+
+
+updateEmptyItem : Person -> Person
+updateEmptyItem person =
+    person
+
+
+updateFilledCollection : List Person -> PersonCollection -> PersonCollection
+updateFilledCollection persons current =
+    { entities = updateEntities persons current.entities
+    , displayOrder = List.map .url persons
     }
+
+
+updateEmptyCollection : List Person -> PersonCollection
+updateEmptyCollection persons =
+    { entities = createEntities persons
+    , displayOrder = List.map .url persons
+    }
+
+
+type alias Transitions a b =
+    { emptyToFilled : a -> b
+    , filledToFilled : a -> b -> b
+    }
+
+
+updateCache : Transitions c b -> Cache a b -> CacheEvent a c -> Cache a b
+updateCache transitions current event =
+    case current of
+        Empty ->
+            case event of
+                Sync ->
+                    EmptySyncing
+
+                Failure nextError ->
+                    EmptyInvalid nextError
+
+                Success nextData ->
+                    Filled <| transitions.emptyToFilled nextData
+
+        EmptyInvalid currentError ->
+            case event of
+                Sync ->
+                    EmptyInvalidSyncing currentError
+
+                Failure nextError ->
+                    EmptyInvalid nextError
+
+                Success nextData ->
+                    Filled <| transitions.emptyToFilled nextData
+
+        EmptySyncing ->
+            case event of
+                Sync ->
+                    EmptySyncing
+
+                Failure nextError ->
+                    EmptyInvalid nextError
+
+                Success nextData ->
+                    Filled <| transitions.emptyToFilled nextData
+
+        EmptyInvalidSyncing currentError ->
+            case event of
+                Sync ->
+                    EmptyInvalidSyncing currentError
+
+                Failure nextError ->
+                    EmptyInvalid nextError
+
+                Success nextData ->
+                    Filled <| transitions.emptyToFilled nextData
+
+        Filled currentData ->
+            case event of
+                Sync ->
+                    FilledSyncing currentData
+
+                Failure nextError ->
+                    FilledInvalid nextError currentData
+
+                Success nextData ->
+                    Filled <| transitions.filledToFilled nextData currentData
+
+        FilledInvalid currentError currentData ->
+            case event of
+                Sync ->
+                    FilledInvalidSyncing currentError currentData
+
+                Failure nextError ->
+                    FilledInvalid nextError currentData
+
+                Success nextData ->
+                    Filled <| transitions.filledToFilled nextData currentData
+
+        FilledSyncing currentData ->
+            case event of
+                Sync ->
+                    FilledSyncing currentData
+
+                Failure nextError ->
+                    FilledInvalid nextError currentData
+
+                Success nextData ->
+                    Filled <| transitions.filledToFilled nextData currentData
+
+        FilledInvalidSyncing currentError currentData ->
+            case event of
+                Sync ->
+                    FilledInvalidSyncing currentError currentData
+
+                Failure nextError ->
+                    FilledInvalid nextError currentData
+
+                Success nextData ->
+                    Filled <| transitions.filledToFilled nextData currentData
 
 
 type alias Person =
@@ -120,109 +307,193 @@ type Msg
     | ItemResponse String (Result Http.Error Person)
 
 
-type alias Url a =
-    { a | url : String }
-
-
-keyByUrl : Url a -> ( String, Url a )
-keyByUrl x =
-    ( x.url, x )
-
-
-toUrlDict : List (Url a) -> Dict String (Url a)
-toUrlDict xs =
-    List.map keyByUrl xs
-        |> Dict.fromList
-
-
-toSuccess : String -> Person -> RemoteData Http.Error Person
-toSuccess k person =
-    Success person
-
-
-refreshCollection : List Person -> PersonCollection
-refreshCollection persons =
-    { collection = Dict.map toSuccess <| toUrlDict persons
-    , displayOrder = List.map .url persons
-    }
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         CollectionRequest ->
-            ( { model | persons = Loading }, getCollection )
+            ( { model
+                | persons =
+                    updateCache
+                        { emptyToFilled = updateEmptyCollection
+                        , filledToFilled = updateFilledCollection
+                        }
+                        model.persons
+                        Sync
+              }
+            , getCollection
+            )
 
         CollectionResponse (Err e) ->
-            ( { model | persons = Failure e }, Cmd.none )
+            ( { model
+                | persons =
+                    updateCache
+                        { emptyToFilled = updateEmptyCollection
+                        , filledToFilled = updateFilledCollection
+                        }
+                        model.persons
+                        (Failure e)
+              }
+            , Cmd.none
+            )
 
         CollectionResponse (Ok persons) ->
-            ( { model | persons = Success <| refreshCollection persons }, Cmd.none )
+            ( { model
+                | persons =
+                    updateCache
+                        { emptyToFilled = updateEmptyCollection
+                        , filledToFilled = updateFilledCollection
+                        }
+                        model.persons
+                        (Success persons)
+              }
+            , Cmd.none
+            )
 
         _ ->
             ( model, Cmd.none )
 
 
-errorView : String -> Html Msg
-errorView error =
-    p
-        []
-        [ text "Error:"
+btn : (String -> Msg) -> String -> Person -> Html Msg
+btn msgCtr label { name, url } =
+    button
+        [ onClick (msgCtr url)
+        ]
+        [ text label
         ]
 
 
-itemView : RemoteData Http.Error Person -> Html Msg
-itemView person =
+buttonView : (String -> Msg) -> String -> Cache Http.Error Person -> Html Msg
+buttonView msgCtr label person =
     case person of
-        NotAsked ->
-            text "Person NotAsked"
+        Empty ->
+            text ""
 
-        Loading ->
-            text "Person Loading"
+        EmptyInvalid _ ->
+            text ""
 
-        Failure _ ->
-            text "Person Error"
+        EmptyInvalidSyncing _ ->
+            text ""
 
-        Success { name } ->
-            li
-                []
-                [ p
-                    []
-                    [ text ("Name: " ++ name)
-                    ]
-                , button
-                    [ onClick (ItemDetailsRequest "")
-                    ]
-                    [ text "Get details"
-                    ]
-                , button
-                    [ onClick (ItemErrorRequest "")
-                    ]
-                    [ text "Get error"
-                    ]
-                ]
+        EmptySyncing ->
+            text ""
+
+        Filled p ->
+            btn msgCtr label p
+
+        FilledInvalid _ p ->
+            btn msgCtr label p
+
+        FilledInvalidSyncing _ p ->
+            btn msgCtr label p
+
+        FilledSyncing p ->
+            btn msgCtr label p
 
 
-filterNothing : Maybe a -> List a -> List a
-filterNothing mX xs =
-    case mX of
-        Just x ->
-            x :: xs
+loadingView : Cache Http.Error Person -> Html Msg
+loadingView person =
+    case person of
+        Empty ->
+            text ""
 
-        Nothing ->
-            xs
+        EmptyInvalid _ ->
+            text ""
+
+        EmptyInvalidSyncing _ ->
+            text "Loading"
+
+        EmptySyncing ->
+            text "Loading"
+
+        Filled _ ->
+            text ""
+
+        FilledInvalid _ _ ->
+            text ""
+
+        FilledInvalidSyncing _ _ ->
+            text "Loading"
+
+        FilledSyncing _ ->
+            text "Loading"
 
 
-filterNothings : List (Maybe a) -> List a
-filterNothings =
-    List.foldl filterNothing []
+errorView : Cache Http.Error Person -> Html Msg
+errorView person =
+    case person of
+        Empty ->
+            text ""
+
+        EmptyInvalid _ ->
+            text "Error"
+
+        EmptyInvalidSyncing _ ->
+            text "Error"
+
+        EmptySyncing ->
+            text ""
+
+        Filled _ ->
+            text ""
+
+        FilledInvalid _ _ ->
+            text "Error"
+
+        FilledInvalidSyncing _ _ ->
+            text "Error"
+
+        FilledSyncing _ ->
+            text ""
 
 
-listView : PersonCollection -> Html Msg
-listView { collection, displayOrder } =
+nameView : Cache Http.Error Person -> Html Msg
+nameView person =
+    case person of
+        Empty ->
+            text ""
+
+        EmptyInvalid _ ->
+            text ""
+
+        EmptyInvalidSyncing _ ->
+            text ""
+
+        EmptySyncing ->
+            text ""
+
+        Filled { name } ->
+            text name
+
+        FilledInvalid _ { name } ->
+            text name
+
+        FilledInvalidSyncing _ { name } ->
+            text name
+
+        FilledSyncing { name } ->
+            text name
+
+
+itemView : Cache Http.Error Person -> Html Msg
+itemView person =
+    li
+        []
+        [ p
+            []
+            [ nameView person
+            , errorView person
+            , loadingView person
+            ]
+        , buttonView ItemDetailsRequest "Get details" person
+        , buttonView ItemErrorRequest "Get error" person
+        ]
+
+
+listView : Collection (Cache Http.Error Person) -> Html Msg
+listView { entities, displayOrder } =
     let
         getPersons =
-            flip Dict.get collection
+            flip Dict.get entities
     in
         List.map getPersons displayOrder
             |> filterNothings
@@ -230,20 +501,58 @@ listView { collection, displayOrder } =
             |> ul []
 
 
-collectionView : Model -> Html Msg
-collectionView model =
-    case model.persons of
-        NotAsked ->
-            text "Empty"
+collectionView : Cache Http.Error (Collection (Cache Http.Error Person)) -> Html Msg
+collectionView collectionCache =
+    case collectionCache of
+        Empty ->
+            text ""
 
-        Loading ->
-            text "Loading"
+        EmptyInvalid _ ->
+            div
+                []
+                [ text "Error"
+                ]
 
-        Failure error ->
-            text "Failure"
+        EmptyInvalidSyncing error ->
+            div
+                []
+                [ text "Error"
+                , text "Loading"
+                ]
 
-        Success persons ->
-            listView persons
+        EmptySyncing ->
+            div
+                []
+                [ text "Loading"
+                ]
+
+        Filled collection ->
+            div
+                []
+                [ listView collection
+                ]
+
+        FilledInvalid error collection ->
+            div
+                []
+                [ text "Error"
+                , listView collection
+                ]
+
+        FilledInvalidSyncing error collection ->
+            div
+                []
+                [ text "Error"
+                , text "Loading"
+                , listView collection
+                ]
+
+        FilledSyncing collection ->
+            div
+                []
+                [ text "Loading"
+                , listView collection
+                ]
 
 
 view : Model -> Html Msg
@@ -262,6 +571,6 @@ view model =
             ]
         , div
             []
-            [ collectionView model
+            [ collectionView model.persons
             ]
         ]
