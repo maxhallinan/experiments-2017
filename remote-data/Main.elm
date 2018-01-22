@@ -51,6 +51,12 @@ getCollection =
         Http.get "https://swapi.co/api/people/" decodePersons
 
 
+getCollectionError : Cmd Msg
+getCollectionError =
+    Http.send CollectionResponse <|
+        Http.get "https://swapi.co/api/foo/" decodePersons
+
+
 
 -- Model
 
@@ -106,22 +112,22 @@ updateEntities updates currentCache =
         getCurrent =
             flip Dict.get currentCache
     in
-        -- key by url
-        List.map keyByUrl updates
-            |> List.map (\( url, person ) -> ( url, Success person ))
-            -- map each to success
-            |> List.map
-                (\( url, person ) ->
-                    ( url
-                    , updateCache
-                        { emptyToFilled = updateEmptyItem
-                        , filledToFilled = updateFilledItem
-                        }
-                        (Maybe.withDefault Empty <| getCurrent url)
-                        person
-                    )
+    -- key by url
+    List.map keyByUrl updates
+        |> List.map (\( url, person ) -> ( url, Success person ))
+        -- map each to success
+        |> List.map
+            (\( url, person ) ->
+                ( url
+                , updateCache
+                    { emptyToFilled = updateEmptyItem
+                    , filledToFilled = updateFilledItem
+                    }
+                    (Maybe.withDefault Empty <| getCurrent url)
+                    person
                 )
-            |> Dict.fromList
+            )
+        |> Dict.fromList
 
 
 type alias PersonCollection =
@@ -349,6 +355,25 @@ update msg model =
             , Cmd.none
             )
 
+        CollectionErrorRequest ->
+            ( model, getCollectionError )
+
+        CollectionErrorResponse (Ok _) ->
+            ( model, getCollectionError )
+
+        CollectionErrorResponse (Err error) ->
+            ( { model
+                | persons =
+                    updateCache
+                        { emptyToFilled = updateEmptyCollection
+                        , filledToFilled = updateFilledCollection
+                        }
+                        model.persons
+                        (Failure error)
+              }
+            , Cmd.none
+            )
+
         _ ->
             ( model, Cmd.none )
 
@@ -495,10 +520,10 @@ listView { entities, displayOrder } =
         getPersons =
             flip Dict.get entities
     in
-        List.map getPersons displayOrder
-            |> filterNothings
-            |> List.map itemView
-            |> ul []
+    List.map getPersons displayOrder
+        |> filterNothings
+        |> List.map itemView
+        |> ul []
 
 
 collectionView : Cache Http.Error (Collection (Cache Http.Error Person)) -> Html Msg
@@ -510,20 +535,32 @@ collectionView collectionCache =
         EmptyInvalid _ ->
             div
                 []
-                [ text "Error"
+                [ p
+                    []
+                    [ text "Error"
+                    ]
                 ]
 
         EmptyInvalidSyncing error ->
             div
                 []
-                [ text "Error"
-                , text "Loading"
+                [ p
+                    []
+                    [ text "Error"
+                    ]
+                , p
+                    []
+                    [ text "Loading"
+                    ]
                 ]
 
         EmptySyncing ->
             div
                 []
-                [ text "Loading"
+                [ p
+                    []
+                    [ text "Loading"
+                    ]
                 ]
 
         Filled collection ->
@@ -535,22 +572,34 @@ collectionView collectionCache =
         FilledInvalid error collection ->
             div
                 []
-                [ text "Error"
+                [ p
+                    []
+                    [ text "Error"
+                    ]
                 , listView collection
                 ]
 
         FilledInvalidSyncing error collection ->
             div
                 []
-                [ text "Error"
-                , text "Loading"
+                [ p
+                    []
+                    [ text "Error"
+                    ]
+                , p
+                    []
+                    [ text "Loading"
+                    ]
                 , listView collection
                 ]
 
         FilledSyncing collection ->
             div
                 []
-                [ text "Loading"
+                [ p
+                    []
+                    [ text "Loading"
+                    ]
                 , listView collection
                 ]
 
