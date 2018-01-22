@@ -45,6 +45,12 @@ getItem url =
         Http.get url decodePerson
 
 
+getItemError : String -> Cmd Msg
+getItemError url =
+    Http.send (ItemResponse url) <|
+        Http.get "https://swapi.co/api/foo/" decodePerson
+
+
 getCollection : Cmd Msg
 getCollection =
     Http.send CollectionResponse <|
@@ -305,12 +311,10 @@ type Msg
     | CollectionErrorResponse (Result Http.Error (List Person))
     | CollectionRequest
     | CollectionResponse (Result Http.Error (List Person))
-    | ItemDetailsRequest String
-    | ItemDetailsResponse (Result Http.Error Person)
-    | ItemErrorRequest String
-    | ItemErrorResponse (Result Http.Error Person)
     | ItemRequest String
     | ItemResponse String (Result Http.Error Person)
+    | ItemErrorRequest String
+    | ItemErrorResponse String (Result Http.Error Person)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -374,7 +378,22 @@ update msg model =
             , Cmd.none
             )
 
-        _ ->
+        ItemRequest url ->
+            ( model, getItem url )
+
+        ItemResponse url (Ok person) ->
+            ( model, Cmd.none )
+
+        ItemResponse url (Err err) ->
+            ( model, Cmd.none )
+
+        ItemErrorRequest url ->
+            ( model, getItemError url )
+
+        ItemErrorResponse url (Ok person) ->
+            ( model, Cmd.none )
+
+        ItemErrorResponse url (Err err) ->
             ( model, Cmd.none )
 
 
@@ -509,7 +528,7 @@ itemView person =
             , errorView person
             , loadingView person
             ]
-        , buttonView ItemDetailsRequest "Get details" person
+        , buttonView ItemRequest "Get details" person
         , buttonView ItemErrorRequest "Get error" person
         ]
 
