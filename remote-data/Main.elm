@@ -42,13 +42,13 @@ filterNothings =
 getItem : String -> Cmd Msg
 getItem url =
     Http.send (ItemResponse url) <|
-        Http.get url decodePerson
+        Http.get url decodePersonDetails
 
 
 getItemError : String -> Cmd Msg
 getItemError url =
     Http.send (ItemResponse url) <|
-        Http.get "https://swapi.co/api/foo/" decodePerson
+        Http.get "https://swapi.co/api/foo/" decodePersonDetails
 
 
 getCollection : Cmd Msg
@@ -118,10 +118,8 @@ updateEntities updates currentCache =
         getCurrent =
             flip Dict.get currentCache
     in
-    -- key by url
     List.map keyByUrl updates
         |> List.map (\( url, person ) -> ( url, Success person ))
-        -- map each to success
         |> List.map
             (\( url, person ) ->
                 ( url
@@ -161,6 +159,34 @@ updateEmptyCollection : List Person -> PersonCollection
 updateEmptyCollection persons =
     { entities = createEntities persons
     , displayOrder = List.map .url persons
+    }
+
+
+updateItemInEntities : String -> Person -> Dict String (Cache Http.Error Person) -> Dict String (Cache Http.Error Person)
+updateItemInEntities url update current =
+    Dict.insert
+        url
+        (updateCache
+            { emptyToFilled = \x -> x
+            , filledToFilled = \x y -> x
+            }
+            (Dict.get url current |> Maybe.withDefault Empty)
+            (Success update)
+        )
+        current
+
+
+updateEmptyItemInCollection : String -> Person -> Person -> PersonCollection
+updateEmptyItemInCollection url update current =
+    { entities = updateItemInEntities url update Dict.empty
+    , displayOrder = [ update.url ]
+    }
+
+
+updateFilledItemInCollection : String -> Person -> Person -> PersonCollection -> PersonCollection
+updateFilledItemInCollection url update person current =
+    { entities = updateItemInEntities url update current.entities
+    , displayOrder = current.displayOrder
     }
 
 
@@ -265,7 +291,14 @@ updateCache transitions current event =
 type alias Person =
     { name : String
     , url : String
+    , hairColor : Maybe String
     }
+
+
+decodeHairColor : Json.Decode.Decoder (Maybe String)
+decodeHairColor =
+    Json.Decode.field "hair_color" Json.Decode.string
+        |> Json.Decode.map Just
 
 
 decodeName : Json.Decode.Decoder String
@@ -280,7 +313,20 @@ decodeUrl =
 
 decodePerson : Json.Decode.Decoder Person
 decodePerson =
-    Json.Decode.map2 Person decodeName decodeUrl
+    Json.Decode.map3
+        Person
+        decodeName
+        decodeUrl
+        (Json.Decode.succeed Nothing)
+
+
+decodePersonDetails : Json.Decode.Decoder Person
+decodePersonDetails =
+    Json.Decode.map3
+        Person
+        decodeName
+        decodeUrl
+        decodeHairColor
 
 
 decodePersons : Json.Decode.Decoder (List Person)
@@ -384,6 +430,17 @@ update msg model =
         ItemResponse url (Ok person) ->
             ( model, Cmd.none )
 
+        -- ( { model
+        --     | persons =
+        --         updateCache
+        --             { emptyToFilled = updateEmptyItemInCollection url person
+        --             , filledToFilled = updateFilledItemInCollection url person
+        --             }
+        --             model.persons
+        --             (Success person)
+        --   }
+        -- , Cmd.none
+        -- )
         ItemResponse url (Err err) ->
             ( model, Cmd.none )
 
@@ -490,6 +547,46 @@ errorView person =
             text ""
 
 
+hairColorTextView : Maybe String -> Html Msg
+hairColorTextView hairColor =
+    case hairColor of
+        Just h ->
+            p
+                []
+                [ text h ]
+
+        Nothing ->
+            text ""
+
+
+hairColorView : Cache Http.Error Person -> Html Msg
+hairColorView person =
+    case person of
+        Empty ->
+            text ""
+
+        EmptyInvalid _ ->
+            text ""
+
+        EmptyInvalidSyncing _ ->
+            text ""
+
+        EmptySyncing ->
+            text ""
+
+        Filled { hairColor } ->
+            hairColorTextView hairColor
+
+        FilledInvalid _ { hairColor } ->
+            hairColorTextView hairColor
+
+        FilledInvalidSyncing _ { hairColor } ->
+            hairColorTextView hairColor
+
+        FilledSyncing { name } ->
+            text name
+
+
 nameView : Cache Http.Error Person -> Html Msg
 nameView person =
     case person of
@@ -525,6 +622,7 @@ itemView person =
         [ p
             []
             [ nameView person
+            , hairColorView person
             , errorView person
             , loadingView person
             ]
