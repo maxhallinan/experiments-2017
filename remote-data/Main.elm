@@ -1,6 +1,8 @@
 module Main exposing (..)
 
-import Cache
+import Cache exposing (Cache)
+import Data.Collection exposing (Collection)
+import Data.Person exposing (Person)
 import Dict exposing (Dict)
 import Html exposing (Html, button, div, li, p, span, text, ul)
 import Html.Events exposing (onClick)
@@ -36,6 +38,11 @@ filterNothings =
     List.foldl filterNothing []
 
 
+keyByUrl : { a | url : String } -> ( String, { a | url : String } )
+keyByUrl x =
+    ( x.url, x )
+
+
 
 -- Http
 
@@ -43,25 +50,25 @@ filterNothings =
 getItem : String -> Cmd Msg
 getItem url =
     Http.send (ItemResponse url) <|
-        Http.get url decodePersonDetails
+        Http.get url Data.Person.decodePerson
 
 
 getItemError : String -> Cmd Msg
 getItemError url =
     Http.send (ItemResponse url) <|
-        Http.get "https://swapi.co/api/foo/" decodePersonDetails
+        Http.get "https://swapi.co/api/foo/" Data.Person.decodePerson
 
 
 getCollection : Cmd Msg
 getCollection =
     Http.send CollectionResponse <|
-        Http.get "https://swapi.co/api/people/" decodePersons
+        Http.get "https://swapi.co/api/people/" Data.Person.decodePersonCollection
 
 
 getCollectionError : Cmd Msg
 getCollectionError =
     Http.send CollectionResponse <|
-        Http.get "https://swapi.co/api/foo/" decodePersons
+        Http.get "https://swapi.co/api/foo/" Data.Person.decodePersonCollection
 
 
 
@@ -74,19 +81,12 @@ init =
 
 
 type alias Model =
-    { persons : Cache.Cache Http.Error (Collection (Cache.Cache Http.Error Person))
+    { persons : Cache Http.Error PersonCollection
     }
 
 
-type alias Collection a =
-    { entities : Dict String a
-    , displayOrder : List String
-    }
-
-
-keyByUrl : Person -> ( String, Person )
-keyByUrl person =
-    ( person.url, person )
+type alias PersonCollection =
+    Collection (Cache.Cache Http.Error Person)
 
 
 createEntities : List Person -> Dict String (Cache.Cache Http.Error Person)
@@ -117,10 +117,6 @@ updateEntities updates currentCache =
                 )
             )
         |> Dict.fromList
-
-
-type alias PersonCollection =
-    Collection (Cache.Cache Http.Error Person)
 
 
 updateFilledItem : Person -> Person -> Person
@@ -205,57 +201,6 @@ patchItem url cacheEvent personCollection =
 
         _ ->
             { personCollection | entities = updatedEntities }
-
-
-type alias Person =
-    { name : String
-    , url : String
-    , hairColor : Maybe String
-    }
-
-
-decodeHairColor : Json.Decode.Decoder (Maybe String)
-decodeHairColor =
-    Json.Decode.field "hair_color" Json.Decode.string
-        |> Json.Decode.map Just
-
-
-decodeName : Json.Decode.Decoder String
-decodeName =
-    Json.Decode.field "name" Json.Decode.string
-
-
-decodeUrl : Json.Decode.Decoder String
-decodeUrl =
-    Json.Decode.field "url" Json.Decode.string
-
-
-decodePerson : Json.Decode.Decoder Person
-decodePerson =
-    Json.Decode.map3
-        Person
-        decodeName
-        decodeUrl
-        (Json.Decode.succeed Nothing)
-
-
-decodePersonDetails : Json.Decode.Decoder Person
-decodePersonDetails =
-    Json.Decode.map3
-        Person
-        decodeName
-        decodeUrl
-        decodeHairColor
-
-
-decodePersons : Json.Decode.Decoder (List Person)
-decodePersons =
-    Json.Decode.field "results" (Json.Decode.list decodePerson)
-
-
-decodeError : Json.Decode.Decoder String
-decodeError =
-    Json.Decode.field "detail" Json.Decode.string
 
 
 
