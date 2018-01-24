@@ -1,5 +1,6 @@
 module Main exposing (..)
 
+import Cache
 import Dict exposing (Dict)
 import Html exposing (Html, button, div, li, p, span, text, ul)
 import Html.Events exposing (onClick)
@@ -69,11 +70,11 @@ getCollectionError =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { persons = Empty }, Cmd.none )
+    ( { persons = Cache.Empty }, Cmd.none )
 
 
 type alias Model =
-    { persons : Cache Http.Error (Collection (Cache Http.Error Person))
+    { persons : Cache.Cache Http.Error (Collection (Cache.Cache Http.Error Person))
     }
 
 
@@ -83,53 +84,35 @@ type alias Collection a =
     }
 
 
-type CacheEvent a b c
-    = Sync
-    | Failure a
-    | Success b -- change to Insert
-    | Patch c
-
-
-type Cache a b
-    = Empty
-    | EmptyInvalid a
-    | EmptySyncing
-    | EmptyInvalidSyncing a
-    | Filled b
-    | FilledSyncing b
-    | FilledInvalid a b
-    | FilledInvalidSyncing a b
-
-
 keyByUrl : Person -> ( String, Person )
 keyByUrl person =
     ( person.url, person )
 
 
-createEntities : List Person -> Dict String (Cache Http.Error Person)
+createEntities : List Person -> Dict String (Cache.Cache Http.Error Person)
 createEntities persons =
     List.map keyByUrl persons
-        |> List.map (\( url, p ) -> ( url, Filled p ))
+        |> List.map (\( url, p ) -> ( url, Cache.Filled p ))
         |> Dict.fromList
 
 
-updateEntities : List Person -> Dict String (Cache Http.Error Person) -> Dict String (Cache Http.Error Person)
+updateEntities : List Person -> Dict String (Cache.Cache Http.Error Person) -> Dict String (Cache.Cache Http.Error Person)
 updateEntities updates currentCache =
     let
         getCurrent =
             flip Dict.get currentCache
     in
     List.map keyByUrl updates
-        |> List.map (\( url, person ) -> ( url, Success person ))
+        |> List.map (\( url, person ) -> ( url, Cache.Update person ))
         |> List.map
             (\( url, person ) ->
                 ( url
-                , updateCache
-                    { emptyToFilled = updateEmptyItem
-                    , filledToFilled = updateFilledItem
-                    , patch = \patchEvent current -> current
+                , Cache.updateCache
+                    { updateEmpty = updateEmptyItem
+                    , updateFilled = updateFilledItem
+                    , patchFilled = \patchEvent current -> current
                     }
-                    (Maybe.withDefault Empty <| getCurrent url)
+                    (Maybe.withDefault Cache.Empty <| getCurrent url)
                     person
                 )
             )
@@ -137,7 +120,7 @@ updateEntities updates currentCache =
 
 
 type alias PersonCollection =
-    Collection (Cache Http.Error Person)
+    Collection (Cache.Cache Http.Error Person)
 
 
 updateFilledItem : Person -> Person -> Person
@@ -164,17 +147,17 @@ updateEmptyCollection persons =
     }
 
 
-updateItemInEntities : String -> Person -> Dict String (Cache Http.Error Person) -> Dict String (Cache Http.Error Person)
+updateItemInEntities : String -> Person -> Dict String (Cache.Cache Http.Error Person) -> Dict String (Cache.Cache Http.Error Person)
 updateItemInEntities url update current =
     Dict.insert
         url
-        (updateCache
-            { emptyToFilled = \x -> x
-            , filledToFilled = \x y -> x
-            , patch = \patchEvent current -> current
+        (Cache.updateCache
+            { updateEmpty = \x -> x
+            , updateFilled = \x y -> x
+            , patchFilled = \patchEvent current -> current
             }
-            (Dict.get url current |> Maybe.withDefault Empty)
-            (Success update)
+            (Dict.get url current |> Maybe.withDefault Cache.Empty)
+            (Cache.Update update)
         )
         current
 
@@ -193,7 +176,7 @@ updateFilledItemInCollection url update current =
     }
 
 
-patchItem : String -> CacheEvent Http.Error Person a -> PersonCollection -> PersonCollection
+patchItem : String -> Cache.CacheEvent Http.Error Person a -> PersonCollection -> PersonCollection
 patchItem url cacheEvent personCollection =
     let
         item =
@@ -202,10 +185,10 @@ patchItem url cacheEvent personCollection =
         updatedItem =
             Maybe.map
                 (\cache ->
-                    updateCache
-                        { emptyToFilled = \x -> x
-                        , filledToFilled = \x y -> x
-                        , patch = \x y -> y
+                    Cache.updateCache
+                        { updateEmpty = \x -> x
+                        , updateFilled = \x y -> x
+                        , patchFilled = \x y -> y
                         }
                         cache
                         cacheEvent
@@ -217,134 +200,11 @@ patchItem url cacheEvent personCollection =
                 |> Maybe.withDefault personCollection.entities
     in
     case cacheEvent of
-        Patch _ ->
+        Cache.Patch _ ->
             personCollection
 
         _ ->
             { personCollection | entities = updatedEntities }
-
-
-type alias Transitions a b c =
-    { emptyToFilled : a -> b
-    , filledToFilled : a -> b -> b
-    , patch : c -> b -> b
-    }
-
-
-updateCache : Transitions c b d -> Cache a b -> CacheEvent a c d -> Cache a b
-updateCache transitions current event =
-    case current of
-        Empty ->
-            case event of
-                Sync ->
-                    EmptySyncing
-
-                Failure nextError ->
-                    EmptyInvalid nextError
-
-                Success nextData ->
-                    Filled <| transitions.emptyToFilled nextData
-
-                Patch _ ->
-                    current
-
-        EmptyInvalid currentError ->
-            case event of
-                Sync ->
-                    EmptyInvalidSyncing currentError
-
-                Failure nextError ->
-                    EmptyInvalid nextError
-
-                Success nextData ->
-                    Filled <| transitions.emptyToFilled nextData
-
-                Patch _ ->
-                    current
-
-        EmptySyncing ->
-            case event of
-                Sync ->
-                    EmptySyncing
-
-                Failure nextError ->
-                    EmptyInvalid nextError
-
-                Success nextData ->
-                    Filled <| transitions.emptyToFilled nextData
-
-                Patch _ ->
-                    current
-
-        EmptyInvalidSyncing currentError ->
-            case event of
-                Sync ->
-                    EmptyInvalidSyncing currentError
-
-                Failure nextError ->
-                    EmptyInvalid nextError
-
-                Success nextData ->
-                    Filled <| transitions.emptyToFilled nextData
-
-                Patch _ ->
-                    current
-
-        Filled currentData ->
-            case event of
-                Sync ->
-                    FilledSyncing currentData
-
-                Failure nextError ->
-                    FilledInvalid nextError currentData
-
-                Success nextData ->
-                    Filled <| transitions.filledToFilled nextData currentData
-
-                Patch patchEvent ->
-                    Filled <| transitions.patch patchEvent currentData
-
-        FilledInvalid currentError currentData ->
-            case event of
-                Sync ->
-                    FilledInvalidSyncing currentError currentData
-
-                Failure nextError ->
-                    FilledInvalid nextError currentData
-
-                Success nextData ->
-                    Filled <| transitions.filledToFilled nextData currentData
-
-                Patch patchEvent ->
-                    Filled <| transitions.patch patchEvent currentData
-
-        FilledSyncing currentData ->
-            case event of
-                Sync ->
-                    FilledSyncing currentData
-
-                Failure nextError ->
-                    FilledInvalid nextError currentData
-
-                Success nextData ->
-                    Filled <| transitions.filledToFilled nextData currentData
-
-                Patch patchEvent ->
-                    Filled <| transitions.patch patchEvent currentData
-
-        FilledInvalidSyncing currentError currentData ->
-            case event of
-                Sync ->
-                    FilledInvalidSyncing currentError currentData
-
-                Failure nextError ->
-                    FilledInvalid nextError currentData
-
-                Success nextData ->
-                    Filled <| transitions.filledToFilled nextData currentData
-
-                Patch patchEvent ->
-                    Filled <| transitions.patch patchEvent currentData
 
 
 type alias Person =
@@ -428,13 +288,13 @@ update msg model =
         CollectionRequest ->
             ( { model
                 | persons =
-                    updateCache
-                        { emptyToFilled = updateEmptyCollection
-                        , filledToFilled = updateFilledCollection
-                        , patch = \patchEvent current -> current
+                    Cache.updateCache
+                        { updateEmpty = updateEmptyCollection
+                        , updateFilled = updateFilledCollection
+                        , patchFilled = \patchEvent current -> current
                         }
                         model.persons
-                        Sync
+                        Cache.Sync
               }
             , getCollection
             )
@@ -442,13 +302,13 @@ update msg model =
         CollectionResponse (Err e) ->
             ( { model
                 | persons =
-                    updateCache
-                        { emptyToFilled = updateEmptyCollection
-                        , filledToFilled = updateFilledCollection
-                        , patch = \patchEvent current -> current
+                    Cache.updateCache
+                        { updateEmpty = updateEmptyCollection
+                        , updateFilled = updateFilledCollection
+                        , patchFilled = \patchEvent current -> current
                         }
                         model.persons
-                        (Failure e)
+                        (Cache.Error e)
               }
             , Cmd.none
             )
@@ -456,13 +316,13 @@ update msg model =
         CollectionResponse (Ok persons) ->
             ( { model
                 | persons =
-                    updateCache
-                        { emptyToFilled = updateEmptyCollection
-                        , filledToFilled = updateFilledCollection
-                        , patch = \patchEvent current -> current
+                    Cache.updateCache
+                        { updateEmpty = updateEmptyCollection
+                        , updateFilled = updateFilledCollection
+                        , patchFilled = \patchEvent current -> current
                         }
                         model.persons
-                        (Success persons)
+                        (Cache.Update persons)
               }
             , Cmd.none
             )
@@ -476,13 +336,13 @@ update msg model =
         CollectionErrorResponse (Err error) ->
             ( { model
                 | persons =
-                    updateCache
-                        { emptyToFilled = updateEmptyCollection
-                        , filledToFilled = updateFilledCollection
-                        , patch = \patchEvent current -> current
+                    Cache.updateCache
+                        { updateEmpty = updateEmptyCollection
+                        , updateFilled = updateFilledCollection
+                        , patchFilled = \patchEvent current -> current
                         }
                         model.persons
-                        (Failure error)
+                        (Cache.Error error)
               }
             , Cmd.none
             )
@@ -490,13 +350,13 @@ update msg model =
         ItemRequest url ->
             ( { model
                 | persons =
-                    updateCache
-                        { emptyToFilled = updateEmptyCollection
-                        , filledToFilled = updateFilledCollection
-                        , patch = patchItem url
+                    Cache.updateCache
+                        { updateEmpty = updateEmptyCollection
+                        , updateFilled = updateFilledCollection
+                        , patchFilled = patchItem url
                         }
                         model.persons
-                        (Patch Sync)
+                        (Cache.Patch Cache.Sync)
               }
             , getItem url
             )
@@ -504,13 +364,13 @@ update msg model =
         ItemResponse url (Ok person) ->
             ( { model
                 | persons =
-                    updateCache
-                        { emptyToFilled = updateEmptyCollection
-                        , filledToFilled = updateFilledCollection
-                        , patch = patchItem url
+                    Cache.updateCache
+                        { updateEmpty = updateEmptyCollection
+                        , updateFilled = updateFilledCollection
+                        , patchFilled = patchItem url
                         }
                         model.persons
-                        (Patch (Success person))
+                        (Cache.Patch (Cache.Update person))
               }
             , Cmd.none
             )
@@ -518,13 +378,13 @@ update msg model =
         ItemResponse url (Err err) ->
             ( { model
                 | persons =
-                    updateCache
-                        { emptyToFilled = updateEmptyCollection
-                        , filledToFilled = updateFilledCollection
-                        , patch = patchItem url
+                    Cache.updateCache
+                        { updateEmpty = updateEmptyCollection
+                        , updateFilled = updateFilledCollection
+                        , patchFilled = patchItem url
                         }
                         model.persons
-                        (Patch (Failure err))
+                        (Cache.Patch (Cache.Error err))
               }
             , Cmd.none
             )
@@ -532,13 +392,13 @@ update msg model =
         ItemErrorRequest url ->
             ( { model
                 | persons =
-                    updateCache
-                        { emptyToFilled = updateEmptyCollection
-                        , filledToFilled = updateFilledCollection
-                        , patch = patchItem url
+                    Cache.updateCache
+                        { updateEmpty = updateEmptyCollection
+                        , updateFilled = updateFilledCollection
+                        , patchFilled = patchItem url
                         }
                         model.persons
-                        (Patch Sync)
+                        (Cache.Patch Cache.Sync)
               }
             , getItemError url
             )
@@ -546,13 +406,13 @@ update msg model =
         ItemErrorResponse url (Ok person) ->
             ( { model
                 | persons =
-                    updateCache
-                        { emptyToFilled = updateEmptyCollection
-                        , filledToFilled = updateFilledCollection
-                        , patch = patchItem url
+                    Cache.updateCache
+                        { updateEmpty = updateEmptyCollection
+                        , updateFilled = updateFilledCollection
+                        , patchFilled = patchItem url
                         }
                         model.persons
-                        (Patch (Success person))
+                        (Cache.Patch (Cache.Update person))
               }
             , Cmd.none
             )
@@ -560,16 +420,20 @@ update msg model =
         ItemErrorResponse url (Err err) ->
             ( { model
                 | persons =
-                    updateCache
-                        { emptyToFilled = updateEmptyCollection
-                        , filledToFilled = updateFilledCollection
-                        , patch = patchItem url
+                    Cache.updateCache
+                        { updateEmpty = updateEmptyCollection
+                        , updateFilled = updateFilledCollection
+                        , patchFilled = patchItem url
                         }
                         model.persons
-                        (Patch (Failure err))
+                        (Cache.Patch (Cache.Error err))
               }
             , Cmd.none
             )
+
+
+
+-- View
 
 
 btn : (String -> Msg) -> String -> Person -> Html Msg
@@ -581,111 +445,111 @@ btn msgCtr label { name, url } =
         ]
 
 
-buttonView : (String -> Msg) -> String -> Cache Http.Error Person -> Html Msg
+buttonView : (String -> Msg) -> String -> Cache.Cache Http.Error Person -> Html Msg
 buttonView msgCtr label person =
     case person of
-        Empty ->
+        Cache.Empty ->
             text ""
 
-        EmptyInvalid _ ->
+        Cache.EmptyInvalid _ ->
             text ""
 
-        EmptyInvalidSyncing _ ->
+        Cache.EmptyInvalidSyncing _ ->
             text ""
 
-        EmptySyncing ->
+        Cache.EmptySyncing ->
             text ""
 
-        Filled p ->
+        Cache.Filled p ->
             btn msgCtr label p
 
-        FilledInvalid _ p ->
+        Cache.FilledInvalid _ p ->
             btn msgCtr label p
 
-        FilledInvalidSyncing _ p ->
+        Cache.FilledInvalidSyncing _ p ->
             btn msgCtr label p
 
-        FilledSyncing p ->
+        Cache.FilledSyncing p ->
             btn msgCtr label p
 
 
-loadingView : Cache Http.Error Person -> Html Msg
+loadingView : Cache.Cache Http.Error Person -> Html Msg
 loadingView person =
     case person of
-        Empty ->
+        Cache.Empty ->
             text ""
 
-        EmptyInvalid _ ->
+        Cache.EmptyInvalid _ ->
             text ""
 
-        EmptyInvalidSyncing _ ->
+        Cache.EmptyInvalidSyncing _ ->
             p
                 []
                 [ text "Loading"
                 ]
 
-        EmptySyncing ->
+        Cache.EmptySyncing ->
             p
                 []
                 [ text "Loading"
                 ]
 
-        Filled _ ->
+        Cache.Filled _ ->
             text ""
 
-        FilledInvalid _ _ ->
+        Cache.FilledInvalid _ _ ->
             text ""
 
-        FilledInvalidSyncing _ _ ->
+        Cache.FilledInvalidSyncing _ _ ->
             p
                 []
                 [ text "Loading"
                 ]
 
-        FilledSyncing _ ->
+        Cache.FilledSyncing _ ->
             p
                 []
                 [ text "Loading"
                 ]
 
 
-errorView : Cache Http.Error Person -> Html Msg
+errorView : Cache.Cache Http.Error Person -> Html Msg
 errorView person =
     case person of
-        Empty ->
+        Cache.Empty ->
             text ""
 
-        EmptyInvalid _ ->
+        Cache.EmptyInvalid _ ->
             p
                 []
                 [ text "Error"
                 ]
 
-        EmptyInvalidSyncing _ ->
+        Cache.EmptyInvalidSyncing _ ->
             p
                 []
                 [ text "Error"
                 ]
 
-        EmptySyncing ->
+        Cache.EmptySyncing ->
             text ""
 
-        Filled _ ->
+        Cache.Filled _ ->
             text ""
 
-        FilledInvalid _ _ ->
+        Cache.FilledInvalid _ _ ->
             p
                 []
                 [ text "Error"
                 ]
 
-        FilledInvalidSyncing _ _ ->
+        Cache.FilledInvalidSyncing _ _ ->
             p
                 []
                 [ text "Error"
                 ]
 
-        FilledSyncing _ ->
+        Cache.FilledSyncing _ ->
             text ""
 
 
@@ -701,63 +565,63 @@ hairColorTextView hairColor =
             text ""
 
 
-hairColorView : Cache Http.Error Person -> Html Msg
+hairColorView : Cache.Cache Http.Error Person -> Html Msg
 hairColorView person =
     case person of
-        Empty ->
+        Cache.Empty ->
             text ""
 
-        EmptyInvalid _ ->
+        Cache.EmptyInvalid _ ->
             text ""
 
-        EmptyInvalidSyncing _ ->
+        Cache.EmptyInvalidSyncing _ ->
             text ""
 
-        EmptySyncing ->
+        Cache.EmptySyncing ->
             text ""
 
-        Filled { hairColor } ->
+        Cache.Filled { hairColor } ->
             hairColorTextView hairColor
 
-        FilledInvalid _ { hairColor } ->
+        Cache.FilledInvalid _ { hairColor } ->
             hairColorTextView hairColor
 
-        FilledInvalidSyncing _ { hairColor } ->
+        Cache.FilledInvalidSyncing _ { hairColor } ->
             hairColorTextView hairColor
 
-        FilledSyncing { hairColor } ->
+        Cache.FilledSyncing { hairColor } ->
             hairColorTextView hairColor
 
 
-nameView : Cache Http.Error Person -> Html Msg
+nameView : Cache.Cache Http.Error Person -> Html Msg
 nameView person =
     case person of
-        Empty ->
+        Cache.Empty ->
             text ""
 
-        EmptyInvalid _ ->
+        Cache.EmptyInvalid _ ->
             text ""
 
-        EmptyInvalidSyncing _ ->
+        Cache.EmptyInvalidSyncing _ ->
             text ""
 
-        EmptySyncing ->
+        Cache.EmptySyncing ->
             text ""
 
-        Filled { name } ->
+        Cache.Filled { name } ->
             text name
 
-        FilledInvalid _ { name } ->
+        Cache.FilledInvalid _ { name } ->
             text name
 
-        FilledInvalidSyncing _ { name } ->
+        Cache.FilledInvalidSyncing _ { name } ->
             text name
 
-        FilledSyncing { name } ->
+        Cache.FilledSyncing { name } ->
             text name
 
 
-itemView : Cache Http.Error Person -> Html Msg
+itemView : Cache.Cache Http.Error Person -> Html Msg
 itemView person =
     li
         []
@@ -773,7 +637,7 @@ itemView person =
         ]
 
 
-listView : Collection (Cache Http.Error Person) -> Html Msg
+listView : Collection (Cache.Cache Http.Error Person) -> Html Msg
 listView { entities, displayOrder } =
     let
         getPersons =
@@ -785,13 +649,13 @@ listView { entities, displayOrder } =
         |> ul []
 
 
-collectionView : Cache Http.Error (Collection (Cache Http.Error Person)) -> Html Msg
+collectionView : Cache.Cache Http.Error (Collection (Cache.Cache Http.Error Person)) -> Html Msg
 collectionView collectionCache =
     case collectionCache of
-        Empty ->
+        Cache.Empty ->
             text ""
 
-        EmptyInvalid _ ->
+        Cache.EmptyInvalid _ ->
             div
                 []
                 [ p
@@ -800,7 +664,7 @@ collectionView collectionCache =
                     ]
                 ]
 
-        EmptyInvalidSyncing error ->
+        Cache.EmptyInvalidSyncing error ->
             div
                 []
                 [ p
@@ -813,7 +677,7 @@ collectionView collectionCache =
                     ]
                 ]
 
-        EmptySyncing ->
+        Cache.EmptySyncing ->
             div
                 []
                 [ p
@@ -822,13 +686,13 @@ collectionView collectionCache =
                     ]
                 ]
 
-        Filled collection ->
+        Cache.Filled collection ->
             div
                 []
                 [ listView collection
                 ]
 
-        FilledInvalid error collection ->
+        Cache.FilledInvalid error collection ->
             div
                 []
                 [ p
@@ -838,7 +702,7 @@ collectionView collectionCache =
                 , listView collection
                 ]
 
-        FilledInvalidSyncing error collection ->
+        Cache.FilledInvalidSyncing error collection ->
             div
                 []
                 [ p
@@ -852,7 +716,7 @@ collectionView collectionCache =
                 , listView collection
                 ]
 
-        FilledSyncing collection ->
+        Cache.FilledSyncing collection ->
             div
                 []
                 [ p

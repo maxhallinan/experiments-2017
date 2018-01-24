@@ -1,0 +1,19 @@
+- Move code for transforming the `Person` and `PersonCollection` stuff to different
+modules.
+  - updating
+  - decoding
+- Create `updateEmptyIdentity`, `updateFilledIdentity`, and 
+`patchEmptyIdentity`.
+- Create mappings from `Cache` to `type Visibility = Show or Hide`.
+
+Layers
+- Http
+- View
+  - view 
+- State
+  - update 
+- Cache
+  - Meta data for Data
+- Data
+  - Collection
+  - Person
