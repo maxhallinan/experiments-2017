@@ -301,8 +301,19 @@ update msg model =
             , getCollectionError
             )
 
-        CollectionErrorResponse (Ok _) ->
-            ( model, Cmd.none )
+        CollectionErrorResponse (Ok persons) ->
+            ( { model
+                | persons =
+                    Cache.updateCache
+                        { updateEmpty = updateEmptyCollection
+                        , updateFilled = updateFilledCollection
+                        , patchFilled = \patchEvent current -> current
+                        }
+                        model.persons
+                        (Cache.Update persons)
+              }
+            , Cmd.none
+            )
 
         CollectionErrorResponse (Err error) ->
             ( { model
@@ -691,19 +702,6 @@ listView =
     listVisibility >> visibilityToHtml listHtml
 
 
-collectionView : Cache.Cache Http.Error PersonCollection -> Html Msg
-collectionView collectionCache =
-    div
-        []
-        [ p
-            []
-            [ loadingView collectionCache
-            , errorView collectionCache
-            , listView collectionCache
-            ]
-        ]
-
-
 view : Model -> Html Msg
 view model =
     div
@@ -718,8 +716,7 @@ view model =
             ]
             [ text "Get error"
             ]
-        , div
-            []
-            [ collectionView model.persons
-            ]
+        , loadingView model.persons
+        , errorView model.persons
+        , listView model.persons
         ]
