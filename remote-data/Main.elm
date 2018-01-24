@@ -1,7 +1,7 @@
 module Main exposing (..)
 
 import Cache exposing (Cache)
-import Data.Collection exposing (Collection)
+import Data.Collection exposing (Collection, Entities)
 import Data.Person exposing (Person)
 import Dict exposing (Dict)
 import Html exposing (Html, button, div, li, p, span, text, ul)
@@ -36,6 +36,11 @@ filterNothing mX xs =
 filterNothings : List (Maybe a) -> List a
 filterNothings =
     List.foldl filterNothing []
+
+
+identity2 : a -> b -> b
+identity2 _ =
+    identity
 
 
 keyByUrl : { a | url : String } -> ( String, { a | url : String } )
@@ -86,17 +91,25 @@ type alias Model =
 
 
 type alias PersonCollection =
-    Collection (Cache.Cache Http.Error Person)
+    Collection PersonCache
 
 
-createEntities : List Person -> Dict String (Cache.Cache Http.Error Person)
+type alias PersonCache =
+    Cache Http.Error Person
+
+
+type alias PersonEntities =
+    Entities PersonCache
+
+
+createEntities : List Person -> PersonEntities
 createEntities persons =
     List.map keyByUrl persons
         |> List.map (\( url, p ) -> ( url, Cache.Filled p ))
         |> Dict.fromList
 
 
-updateEntities : List Person -> Dict String (Cache.Cache Http.Error Person) -> Dict String (Cache.Cache Http.Error Person)
+updateEntities : List Person -> PersonEntities -> PersonEntities
 updateEntities updates currentCache =
     let
         getCurrent =
@@ -108,8 +121,10 @@ updateEntities updates currentCache =
             (\( url, person ) ->
                 ( url
                 , Cache.updateCache
-                    { updateEmpty = updateEmptyItem
-                    , updateFilled = updateFilledItem
+                    { updateEmpty = identity
+                    , updateFilled = identity2
+
+                    -- rename this?
                     , patchFilled = \patchEvent current -> current
                     }
                     (Maybe.withDefault Cache.Empty <| getCurrent url)
@@ -143,7 +158,7 @@ updateEmptyCollection persons =
     }
 
 
-updateItemInEntities : String -> Person -> Dict String (Cache.Cache Http.Error Person) -> Dict String (Cache.Cache Http.Error Person)
+updateItemInEntities : String -> Person -> PersonEntities -> PersonEntities
 updateItemInEntities url update current =
     Dict.insert
         url
@@ -273,10 +288,21 @@ update msg model =
             )
 
         CollectionErrorRequest ->
-            ( model, getCollectionError )
+            ( { model
+                | persons =
+                    Cache.updateCache
+                        { updateEmpty = updateEmptyCollection
+                        , updateFilled = updateFilledCollection
+                        , patchFilled = \patchEvent current -> current
+                        }
+                        model.persons
+                        Cache.Sync
+              }
+            , getCollectionError
+            )
 
         CollectionErrorResponse (Ok _) ->
-            ( model, getCollectionError )
+            ( model, Cmd.none )
 
         CollectionErrorResponse (Err error) ->
             ( { model
@@ -381,8 +407,51 @@ update msg model =
 -- View
 
 
-btn : (String -> Msg) -> String -> Person -> Html Msg
-btn msgCtr label { name, url } =
+type Visibility a
+    = Show a
+    | Hide
+
+
+visibilityToHtml : (a -> Html b) -> Visibility a -> Html b
+visibilityToHtml toHtml visibility =
+    case visibility of
+        Show x ->
+            toHtml x
+
+        Hide ->
+            text ""
+
+
+buttonVisibility : PersonCache -> Visibility Person
+buttonVisibility cache =
+    case cache of
+        Cache.Empty ->
+            Hide
+
+        Cache.EmptyInvalid _ ->
+            Hide
+
+        Cache.EmptyInvalidSyncing _ ->
+            Hide
+
+        Cache.EmptySyncing ->
+            Hide
+
+        Cache.Filled p ->
+            Show p
+
+        Cache.FilledInvalid _ p ->
+            Show p
+
+        Cache.FilledInvalidSyncing _ p ->
+            Show p
+
+        Cache.FilledSyncing p ->
+            Show p
+
+
+buttonHtml : (String -> Msg) -> String -> Person -> Html Msg
+buttonHtml msgCtr label { name, url } =
     button
         [ onClick (msgCtr url)
         ]
@@ -390,116 +459,122 @@ btn msgCtr label { name, url } =
         ]
 
 
-buttonView : (String -> Msg) -> String -> Cache.Cache Http.Error Person -> Html Msg
-buttonView msgCtr label person =
-    case person of
+buttonView : (String -> Msg) -> String -> PersonCache -> Html Msg
+buttonView msgCtor label =
+    buttonVisibility >> visibilityToHtml (buttonHtml msgCtor label)
+
+
+loadingVisibility : Cache Http.Error a -> Visibility ()
+loadingVisibility cache =
+    case cache of
         Cache.Empty ->
-            text ""
+            Hide
 
         Cache.EmptyInvalid _ ->
-            text ""
+            Hide
 
         Cache.EmptyInvalidSyncing _ ->
-            text ""
+            Show ()
 
         Cache.EmptySyncing ->
-            text ""
-
-        Cache.Filled p ->
-            btn msgCtr label p
-
-        Cache.FilledInvalid _ p ->
-            btn msgCtr label p
-
-        Cache.FilledInvalidSyncing _ p ->
-            btn msgCtr label p
-
-        Cache.FilledSyncing p ->
-            btn msgCtr label p
-
-
-loadingView : Cache.Cache Http.Error Person -> Html Msg
-loadingView person =
-    case person of
-        Cache.Empty ->
-            text ""
-
-        Cache.EmptyInvalid _ ->
-            text ""
-
-        Cache.EmptyInvalidSyncing _ ->
-            p
-                []
-                [ text "Loading"
-                ]
-
-        Cache.EmptySyncing ->
-            p
-                []
-                [ text "Loading"
-                ]
+            Show ()
 
         Cache.Filled _ ->
-            text ""
+            Hide
 
         Cache.FilledInvalid _ _ ->
-            text ""
+            Hide
 
         Cache.FilledInvalidSyncing _ _ ->
-            p
-                []
-                [ text "Loading"
-                ]
+            Show ()
 
         Cache.FilledSyncing _ ->
-            p
-                []
-                [ text "Loading"
-                ]
+            Show ()
 
 
-errorView : Cache.Cache Http.Error Person -> Html Msg
-errorView person =
-    case person of
+loadingHtml : Html Msg
+loadingHtml =
+    p
+        []
+        [ text "Loading"
+        ]
+
+
+loadingView : Cache Http.Error a -> Html Msg
+loadingView =
+    loadingVisibility >> visibilityToHtml (\() -> loadingHtml)
+
+
+errorVisibility : Cache Http.Error a -> Visibility String
+errorVisibility cache =
+    case cache of
         Cache.Empty ->
-            text ""
+            Hide
 
         Cache.EmptyInvalid _ ->
-            p
-                []
-                [ text "Error"
-                ]
+            Show "Error"
 
         Cache.EmptyInvalidSyncing _ ->
-            p
-                []
-                [ text "Error"
-                ]
+            Show "Error"
 
         Cache.EmptySyncing ->
-            text ""
+            Hide
 
         Cache.Filled _ ->
-            text ""
+            Hide
 
         Cache.FilledInvalid _ _ ->
-            p
-                []
-                [ text "Error"
-                ]
+            Show "Error"
 
         Cache.FilledInvalidSyncing _ _ ->
-            p
-                []
-                [ text "Error"
-                ]
+            Show "Error"
 
         Cache.FilledSyncing _ ->
-            text ""
+            Hide
 
 
-hairColorTextView : Maybe String -> Html Msg
-hairColorTextView hairColor =
+errorHtml : String -> Html Msg
+errorHtml err =
+    p
+        []
+        [ text err ]
+
+
+errorView : Cache Http.Error a -> Html Msg
+errorView =
+    errorVisibility >> visibilityToHtml errorHtml
+
+
+hairColorVisibility : PersonCache -> Visibility (Maybe String)
+hairColorVisibility person =
+    case person of
+        Cache.Empty ->
+            Hide
+
+        Cache.EmptyInvalid _ ->
+            Hide
+
+        Cache.EmptyInvalidSyncing _ ->
+            Hide
+
+        Cache.EmptySyncing ->
+            Hide
+
+        Cache.Filled { hairColor } ->
+            Show hairColor
+
+        Cache.FilledInvalid _ { hairColor } ->
+            Show hairColor
+
+        Cache.FilledInvalidSyncing _ { hairColor } ->
+            Show hairColor
+
+        Cache.FilledSyncing { hairColor } ->
+            Show hairColor
+
+
+hairColorHtml : Maybe String -> Html Msg
+hairColorHtml hairColor =
     case hairColor of
         Just h ->
             p
@@ -510,63 +585,52 @@ hairColorTextView hairColor =
             text ""
 
 
-hairColorView : Cache.Cache Http.Error Person -> Html Msg
-hairColorView person =
+hairColorView : PersonCache -> Html Msg
+hairColorView =
+    hairColorVisibility >> visibilityToHtml hairColorHtml
+
+
+nameVisibility : PersonCache -> Visibility String
+nameVisibility person =
     case person of
         Cache.Empty ->
-            text ""
+            Hide
 
         Cache.EmptyInvalid _ ->
-            text ""
+            Hide
 
         Cache.EmptyInvalidSyncing _ ->
-            text ""
+            Hide
 
         Cache.EmptySyncing ->
-            text ""
-
-        Cache.Filled { hairColor } ->
-            hairColorTextView hairColor
-
-        Cache.FilledInvalid _ { hairColor } ->
-            hairColorTextView hairColor
-
-        Cache.FilledInvalidSyncing _ { hairColor } ->
-            hairColorTextView hairColor
-
-        Cache.FilledSyncing { hairColor } ->
-            hairColorTextView hairColor
-
-
-nameView : Cache.Cache Http.Error Person -> Html Msg
-nameView person =
-    case person of
-        Cache.Empty ->
-            text ""
-
-        Cache.EmptyInvalid _ ->
-            text ""
-
-        Cache.EmptyInvalidSyncing _ ->
-            text ""
-
-        Cache.EmptySyncing ->
-            text ""
+            Hide
 
         Cache.Filled { name } ->
-            text name
+            Show name
 
         Cache.FilledInvalid _ { name } ->
-            text name
+            Show name
 
         Cache.FilledInvalidSyncing _ { name } ->
-            text name
+            Show name
 
         Cache.FilledSyncing { name } ->
-            text name
+            Show name
 
 
-itemView : Cache.Cache Http.Error Person -> Html Msg
+nameHtml : String -> Html Msg
+nameHtml name =
+    p
+        []
+        [ text name ]
+
+
+nameView : PersonCache -> Html Msg
+nameView =
+    nameVisibility >> visibilityToHtml nameHtml
+
+
+itemView : PersonCache -> Html Msg
 itemView person =
     li
         []
@@ -582,8 +646,36 @@ itemView person =
         ]
 
 
-listView : Collection (Cache.Cache Http.Error Person) -> Html Msg
-listView { entities, displayOrder } =
+listVisibility : Cache Http.Error PersonCollection -> Visibility PersonCollection
+listVisibility cache =
+    case cache of
+        Cache.Empty ->
+            Hide
+
+        Cache.EmptyInvalid _ ->
+            Hide
+
+        Cache.EmptyInvalidSyncing error ->
+            Hide
+
+        Cache.EmptySyncing ->
+            Hide
+
+        Cache.Filled collection ->
+            Show collection
+
+        Cache.FilledInvalid _ collection ->
+            Show collection
+
+        Cache.FilledInvalidSyncing error collection ->
+            Show collection
+
+        Cache.FilledSyncing collection ->
+            Show collection
+
+
+listHtml : Collection PersonCache -> Html Msg
+listHtml { entities, displayOrder } =
     let
         getPersons =
             flip Dict.get entities
@@ -594,82 +686,22 @@ listView { entities, displayOrder } =
         |> ul []
 
 
-collectionView : Cache.Cache Http.Error (Collection (Cache.Cache Http.Error Person)) -> Html Msg
+listView : Cache.Cache Http.Error PersonCollection -> Html Msg
+listView =
+    listVisibility >> visibilityToHtml listHtml
+
+
+collectionView : Cache.Cache Http.Error PersonCollection -> Html Msg
 collectionView collectionCache =
-    case collectionCache of
-        Cache.Empty ->
-            text ""
-
-        Cache.EmptyInvalid _ ->
-            div
-                []
-                [ p
-                    []
-                    [ text "Error"
-                    ]
-                ]
-
-        Cache.EmptyInvalidSyncing error ->
-            div
-                []
-                [ p
-                    []
-                    [ text "Error"
-                    ]
-                , p
-                    []
-                    [ text "Loading"
-                    ]
-                ]
-
-        Cache.EmptySyncing ->
-            div
-                []
-                [ p
-                    []
-                    [ text "Loading"
-                    ]
-                ]
-
-        Cache.Filled collection ->
-            div
-                []
-                [ listView collection
-                ]
-
-        Cache.FilledInvalid error collection ->
-            div
-                []
-                [ p
-                    []
-                    [ text "Error"
-                    ]
-                , listView collection
-                ]
-
-        Cache.FilledInvalidSyncing error collection ->
-            div
-                []
-                [ p
-                    []
-                    [ text "Error"
-                    ]
-                , p
-                    []
-                    [ text "Loading"
-                    ]
-                , listView collection
-                ]
-
-        Cache.FilledSyncing collection ->
-            div
-                []
-                [ p
-                    []
-                    [ text "Loading"
-                    ]
-                , listView collection
-                ]
+    div
+        []
+        [ p
+            []
+            [ loadingView collectionCache
+            , errorView collectionCache
+            , listView collectionCache
+            ]
+        ]
 
 
 view : Model -> Html Msg
@@ -679,12 +711,12 @@ view model =
         [ button
             [ onClick CollectionRequest
             ]
-            [ text "Get collection"
+            [ text "Get data"
             ]
         , button
             [ onClick CollectionErrorRequest
             ]
-            [ text "Get collection error"
+            [ text "Get error"
             ]
         , div
             []

@@ -3,7 +3,10 @@ module Cache
         ( Cache(..)
         , CacheEvent(..)
         , Transitions
+        , patchFilledIdentity
         , updateCache
+        , updateEmptyIdentity
+        , updateFilledIdentity
         )
 
 
@@ -146,3 +149,23 @@ updateCache transitions current event =
 
                 Patch patch ->
                     Filled <| transitions.patchFilled patch currentData
+
+
+patchFilledIdentity : a -> b -> b
+patchFilledIdentity =
+    identity2
+
+
+updateEmptyIdentity : a -> a
+updateEmptyIdentity =
+    identity
+
+
+updateFilledIdentity : a -> b -> b
+updateFilledIdentity =
+    identity2
+
+
+identity2 : a -> b -> b
+identity2 _ =
+    identity
