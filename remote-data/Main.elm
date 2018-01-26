@@ -102,11 +102,39 @@ type alias PersonEntities =
     Entities PersonCache
 
 
-createEntities : List Person -> PersonEntities
-createEntities persons =
-    List.map keyByUrl persons
-        |> List.map (\( url, p ) -> ( url, Cache.Filled p ))
-        |> Dict.fromList
+updateEmptyCollection : List Person -> PersonCollection
+updateEmptyCollection persons =
+    { entities = createEntities persons
+    , displayOrder = toDisplayOrder persons
+    }
+
+
+updateFilledCollection : List Person -> PersonCollection -> PersonCollection
+updateFilledCollection persons current =
+    { entities = updateEntities persons current.entities
+    , displayOrder = toDisplayOrder persons
+    }
+
+
+toDisplayOrder : List Person -> List String
+toDisplayOrder =
+    List.map .url
+
+
+createEntities : List { a | url : String } -> Dict String (Cache b { a | url : String })
+createEntities =
+    toUrlDict >> toFilledCache
+
+
+toUrlDict : List { a | url : String } -> Dict String { a | url : String }
+toUrlDict =
+    List.map keyByUrl
+        >> Dict.fromList
+
+
+toFilledCache : Dict String a -> Dict String (Cache b a)
+toFilledCache =
+    Dict.map (\k v -> Cache.Filled v)
 
 
 updateEntities : List Person -> PersonEntities -> PersonEntities
@@ -132,30 +160,6 @@ updateEntities updates currentCache =
                 )
             )
         |> Dict.fromList
-
-
-updateFilledItem : Person -> Person -> Person
-updateFilledItem current next =
-    next
-
-
-updateEmptyItem : Person -> Person
-updateEmptyItem person =
-    person
-
-
-updateFilledCollection : List Person -> PersonCollection -> PersonCollection
-updateFilledCollection persons current =
-    { entities = updateEntities persons current.entities
-    , displayOrder = List.map .url persons
-    }
-
-
-updateEmptyCollection : List Person -> PersonCollection
-updateEmptyCollection persons =
-    { entities = createEntities persons
-    , displayOrder = List.map .url persons
-    }
 
 
 updateItemInEntities : String -> Person -> PersonEntities -> PersonEntities
@@ -251,7 +255,7 @@ update msg model =
                     Cache.updateCache
                         { updateEmpty = updateEmptyCollection
                         , updateFilled = updateFilledCollection
-                        , patchFilled = \patchEvent current -> current
+                        , patchFilled = identity2
                         }
                         model.persons
                         Cache.Sync
@@ -265,7 +269,7 @@ update msg model =
                     Cache.updateCache
                         { updateEmpty = updateEmptyCollection
                         , updateFilled = updateFilledCollection
-                        , patchFilled = \patchEvent current -> current
+                        , patchFilled = identity2
                         }
                         model.persons
                         (Cache.Error e)
@@ -279,7 +283,7 @@ update msg model =
                     Cache.updateCache
                         { updateEmpty = updateEmptyCollection
                         , updateFilled = updateFilledCollection
-                        , patchFilled = \patchEvent current -> current
+                        , patchFilled = identity2
                         }
                         model.persons
                         (Cache.Update persons)
@@ -293,7 +297,7 @@ update msg model =
                     Cache.updateCache
                         { updateEmpty = updateEmptyCollection
                         , updateFilled = updateFilledCollection
-                        , patchFilled = \patchEvent current -> current
+                        , patchFilled = identity2
                         }
                         model.persons
                         Cache.Sync
@@ -307,7 +311,7 @@ update msg model =
                     Cache.updateCache
                         { updateEmpty = updateEmptyCollection
                         , updateFilled = updateFilledCollection
-                        , patchFilled = \patchEvent current -> current
+                        , patchFilled = identity2
                         }
                         model.persons
                         (Cache.Update persons)
@@ -321,7 +325,7 @@ update msg model =
                     Cache.updateCache
                         { updateEmpty = updateEmptyCollection
                         , updateFilled = updateFilledCollection
-                        , patchFilled = \patchEvent current -> current
+                        , patchFilled = identity2
                         }
                         model.persons
                         (Cache.Error error)
@@ -334,7 +338,7 @@ update msg model =
                 | persons =
                     Cache.updateCache
                         { updateEmpty = updateEmptyCollection
-                        , updateFilled = updateFilledCollection
+                        , updateFilled = identity2
                         , patchFilled = patchItem url
                         }
                         model.persons
@@ -348,7 +352,7 @@ update msg model =
                 | persons =
                     Cache.updateCache
                         { updateEmpty = updateEmptyCollection
-                        , updateFilled = updateFilledCollection
+                        , updateFilled = identity2
                         , patchFilled = patchItem url
                         }
                         model.persons
@@ -362,7 +366,7 @@ update msg model =
                 | persons =
                     Cache.updateCache
                         { updateEmpty = updateEmptyCollection
-                        , updateFilled = updateFilledCollection
+                        , updateFilled = identity2
                         , patchFilled = patchItem url
                         }
                         model.persons
@@ -376,7 +380,7 @@ update msg model =
                 | persons =
                     Cache.updateCache
                         { updateEmpty = updateEmptyCollection
-                        , updateFilled = updateFilledCollection
+                        , updateFilled = identity2
                         , patchFilled = patchItem url
                         }
                         model.persons
@@ -390,7 +394,7 @@ update msg model =
                 | persons =
                     Cache.updateCache
                         { updateEmpty = updateEmptyCollection
-                        , updateFilled = updateFilledCollection
+                        , updateFilled = identity2
                         , patchFilled = patchItem url
                         }
                         model.persons
@@ -404,7 +408,7 @@ update msg model =
                 | persons =
                     Cache.updateCache
                         { updateEmpty = updateEmptyCollection
-                        , updateFilled = updateFilledCollection
+                        , updateFilled = identity2
                         , patchFilled = patchItem url
                         }
                         model.persons
@@ -416,6 +420,26 @@ update msg model =
 
 
 -- View
+
+
+view : Model -> Html Msg
+view model =
+    div
+        []
+        [ button
+            [ onClick CollectionRequest
+            ]
+            [ text "Get data"
+            ]
+        , button
+            [ onClick CollectionErrorRequest
+            ]
+            [ text "Get error"
+            ]
+        , loadingView model.persons
+        , errorView model.persons
+        , listView model.persons
+        ]
 
 
 type Visibility a
@@ -700,23 +724,3 @@ listHtml { entities, displayOrder } =
 listView : Cache.Cache Http.Error PersonCollection -> Html Msg
 listView =
     listVisibility >> visibilityToHtml listHtml
-
-
-view : Model -> Html Msg
-view model =
-    div
-        []
-        [ button
-            [ onClick CollectionRequest
-            ]
-            [ text "Get data"
-            ]
-        , button
-            [ onClick CollectionErrorRequest
-            ]
-            [ text "Get error"
-            ]
-        , loadingView model.persons
-        , errorView model.persons
-        , listView model.persons
-        ]
