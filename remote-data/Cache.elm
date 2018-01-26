@@ -32,8 +32,8 @@ type alias Transitions a b c =
     }
 
 
-updateCache : Transitions c b d -> Cache a b -> CacheEvent a c d -> Cache a b
-updateCache transitions current event =
+updateCache : Transitions c b d -> CacheEvent a c d -> Cache a b -> Cache a b
+updateCache transitions event current =
     case current of
         Empty ->
             case event of

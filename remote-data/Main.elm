@@ -102,18 +102,49 @@ type alias PersonEntities =
     Entities PersonCache
 
 
-updateEmptyCollection : List Person -> PersonCollection
-updateEmptyCollection persons =
+updateEmptyPersonCollection : List Person -> PersonCollection
+updateEmptyPersonCollection persons =
     { entities = createEntities persons
     , displayOrder = toDisplayOrder persons
     }
 
 
-updateFilledCollection : List Person -> PersonCollection -> PersonCollection
-updateFilledCollection persons current =
+updateFilledPersonCollection : List Person -> PersonCollection -> PersonCollection
+updateFilledPersonCollection persons current =
     { entities = updateEntities persons current.entities
     , displayOrder = toDisplayOrder persons
     }
+
+
+patchFilledPersonCollection : String -> Cache.CacheEvent Http.Error Person a -> PersonCollection -> PersonCollection
+patchFilledPersonCollection url cacheEvent personCollection =
+    let
+        entities =
+            personCollection.entities
+    in
+    { personCollection
+        | entities =
+            Dict.get url entities
+                |> Maybe.map (updatePersonCache url cacheEvent)
+                |> Maybe.map (flippedDictInsert url entities)
+                |> Maybe.withDefault entities
+    }
+
+
+flippedDictInsert : String -> Dict String a -> a -> Dict String a
+flippedDictInsert key =
+    flip (Dict.insert key)
+
+
+updatePersonCache : String -> Cache.CacheEvent Http.Error Person a -> PersonCache -> PersonCache
+updatePersonCache url cacheEvent currentCache =
+    Cache.updateCache
+        { updateEmpty = identity
+        , updateFilled = identity2
+        , patchFilled = identity2
+        }
+        cacheEvent
+        currentCache
 
 
 toDisplayOrder : List Person -> List String
@@ -152,8 +183,8 @@ updateEntities updates currentEntities =
                     , updateFilled = identity2
                     , patchFilled = identity2
                     }
-                    (getCurrentPersonCache url)
                     (Cache.Update personUpdate)
+                    (getCurrentPersonCache url)
             )
         |> replaceCurrentWithUpdate currentEntities
 
@@ -176,37 +207,6 @@ mergeOnlyInRight =
 mergeInBoth : String -> a -> b -> Dict String b -> Dict String b
 mergeInBoth key left right result =
     Dict.insert key right result
-
-
-patchItem : String -> Cache.CacheEvent Http.Error Person a -> PersonCollection -> PersonCollection
-patchItem url cacheEvent personCollection =
-    let
-        item =
-            Dict.get url personCollection.entities
-
-        updatedItem =
-            Maybe.map
-                (\cache ->
-                    Cache.updateCache
-                        { updateEmpty = \x -> x
-                        , updateFilled = \x y -> x
-                        , patchFilled = \x y -> y
-                        }
-                        cache
-                        cacheEvent
-                )
-                item
-
-        updatedEntities =
-            Maybe.map (\item -> Dict.insert url item personCollection.entities) updatedItem
-                |> Maybe.withDefault personCollection.entities
-    in
-    case cacheEvent of
-        Cache.Patch _ ->
-            personCollection
-
-        _ ->
-            { personCollection | entities = updatedEntities }
 
 
 
@@ -240,26 +240,26 @@ update msg model =
             ( { model
                 | persons =
                     Cache.updateCache
-                        { updateEmpty = updateEmptyCollection
-                        , updateFilled = updateFilledCollection
+                        { updateEmpty = updateEmptyPersonCollection
+                        , updateFilled = updateFilledPersonCollection
                         , patchFilled = identity2
                         }
-                        model.persons
                         Cache.Sync
+                        model.persons
               }
             , getCollection
             )
 
-        CollectionResponse (Err e) ->
+        CollectionResponse (Err error) ->
             ( { model
                 | persons =
                     Cache.updateCache
-                        { updateEmpty = updateEmptyCollection
-                        , updateFilled = updateFilledCollection
+                        { updateEmpty = updateEmptyPersonCollection
+                        , updateFilled = updateFilledPersonCollection
                         , patchFilled = identity2
                         }
+                        (Cache.Error error)
                         model.persons
-                        (Cache.Error e)
               }
             , Cmd.none
             )
@@ -268,12 +268,12 @@ update msg model =
             ( { model
                 | persons =
                     Cache.updateCache
-                        { updateEmpty = updateEmptyCollection
-                        , updateFilled = updateFilledCollection
+                        { updateEmpty = updateEmptyPersonCollection
+                        , updateFilled = updateFilledPersonCollection
                         , patchFilled = identity2
                         }
-                        model.persons
                         (Cache.Update persons)
+                        model.persons
               }
             , Cmd.none
             )
@@ -282,12 +282,12 @@ update msg model =
             ( { model
                 | persons =
                     Cache.updateCache
-                        { updateEmpty = updateEmptyCollection
-                        , updateFilled = updateFilledCollection
+                        { updateEmpty = updateEmptyPersonCollection
+                        , updateFilled = updateFilledPersonCollection
                         , patchFilled = identity2
                         }
-                        model.persons
                         Cache.Sync
+                        model.persons
               }
             , getCollectionError
             )
@@ -296,12 +296,12 @@ update msg model =
             ( { model
                 | persons =
                     Cache.updateCache
-                        { updateEmpty = updateEmptyCollection
-                        , updateFilled = updateFilledCollection
+                        { updateEmpty = updateEmptyPersonCollection
+                        , updateFilled = updateFilledPersonCollection
                         , patchFilled = identity2
                         }
-                        model.persons
                         (Cache.Update persons)
+                        model.persons
               }
             , Cmd.none
             )
@@ -310,12 +310,12 @@ update msg model =
             ( { model
                 | persons =
                     Cache.updateCache
-                        { updateEmpty = updateEmptyCollection
-                        , updateFilled = updateFilledCollection
+                        { updateEmpty = updateEmptyPersonCollection
+                        , updateFilled = updateFilledPersonCollection
                         , patchFilled = identity2
                         }
-                        model.persons
                         (Cache.Error error)
+                        model.persons
               }
             , Cmd.none
             )
@@ -324,12 +324,12 @@ update msg model =
             ( { model
                 | persons =
                     Cache.updateCache
-                        { updateEmpty = updateEmptyCollection
+                        { updateEmpty = updateEmptyPersonCollection
                         , updateFilled = identity2
-                        , patchFilled = patchItem url
+                        , patchFilled = patchFilledPersonCollection url
                         }
-                        model.persons
                         (Cache.Patch Cache.Sync)
+                        model.persons
               }
             , getItem url
             )
@@ -338,26 +338,26 @@ update msg model =
             ( { model
                 | persons =
                     Cache.updateCache
-                        { updateEmpty = updateEmptyCollection
+                        { updateEmpty = updateEmptyPersonCollection
                         , updateFilled = identity2
-                        , patchFilled = patchItem url
+                        , patchFilled = patchFilledPersonCollection url
                         }
-                        model.persons
                         (Cache.Patch (Cache.Update person))
+                        model.persons
               }
             , Cmd.none
             )
 
-        ItemResponse url (Err err) ->
+        ItemResponse url (Err error) ->
             ( { model
                 | persons =
                     Cache.updateCache
-                        { updateEmpty = updateEmptyCollection
+                        { updateEmpty = updateEmptyPersonCollection
                         , updateFilled = identity2
-                        , patchFilled = patchItem url
+                        , patchFilled = patchFilledPersonCollection url
                         }
+                        (Cache.Patch (Cache.Error error))
                         model.persons
-                        (Cache.Patch (Cache.Error err))
               }
             , Cmd.none
             )
@@ -366,12 +366,12 @@ update msg model =
             ( { model
                 | persons =
                     Cache.updateCache
-                        { updateEmpty = updateEmptyCollection
+                        { updateEmpty = updateEmptyPersonCollection
                         , updateFilled = identity2
-                        , patchFilled = patchItem url
+                        , patchFilled = patchFilledPersonCollection url
                         }
-                        model.persons
                         (Cache.Patch Cache.Sync)
+                        model.persons
               }
             , getItemError url
             )
@@ -380,26 +380,26 @@ update msg model =
             ( { model
                 | persons =
                     Cache.updateCache
-                        { updateEmpty = updateEmptyCollection
+                        { updateEmpty = updateEmptyPersonCollection
                         , updateFilled = identity2
-                        , patchFilled = patchItem url
+                        , patchFilled = patchFilledPersonCollection url
                         }
-                        model.persons
                         (Cache.Patch (Cache.Update person))
+                        model.persons
               }
             , Cmd.none
             )
 
-        ItemErrorResponse url (Err err) ->
+        ItemErrorResponse url (Err error) ->
             ( { model
                 | persons =
                     Cache.updateCache
-                        { updateEmpty = updateEmptyCollection
+                        { updateEmpty = updateEmptyPersonCollection
                         , updateFilled = identity2
-                        , patchFilled = patchItem url
+                        , patchFilled = patchFilledPersonCollection url
                         }
+                        (Cache.Patch (Cache.Error error))
                         model.persons
-                        (Cache.Patch (Cache.Error err))
               }
             , Cmd.none
             )
