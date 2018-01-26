@@ -138,28 +138,44 @@ toFilledCache =
 
 
 updateEntities : List Person -> PersonEntities -> PersonEntities
-updateEntities updates currentCache =
+updateEntities updates currentEntities =
     let
-        getCurrent =
-            flip Dict.get currentCache
+        getCurrentPersonCache =
+            flip Dict.get currentEntities
+                >> Maybe.withDefault Cache.Empty
     in
-    List.map keyByUrl updates
-        |> List.map (\( url, person ) -> ( url, Cache.Update person ))
-        |> List.map
-            (\( url, person ) ->
-                ( url
-                , Cache.updateCache
+    toUrlDict updates
+        |> Dict.map
+            (\url personUpdate ->
+                Cache.updateCache
                     { updateEmpty = identity
                     , updateFilled = identity2
-
-                    -- rename this?
-                    , patchFilled = \patchEvent current -> current
+                    , patchFilled = identity2
                     }
-                    (Maybe.withDefault Cache.Empty <| getCurrent url)
-                    person
-                )
+                    (getCurrentPersonCache url)
+                    (Cache.Update personUpdate)
             )
-        |> Dict.fromList
+        |> replaceCurrentWithUpdate currentEntities
+
+
+replaceCurrentWithUpdate : Dict String a -> Dict String a -> Dict String a
+replaceCurrentWithUpdate x y =
+    Dict.merge mergeOnlyInLeft mergeInBoth mergeOnlyInRight x y Dict.empty
+
+
+mergeOnlyInLeft : String -> a -> Dict String a -> Dict String a
+mergeOnlyInLeft =
+    Dict.insert
+
+
+mergeOnlyInRight : String -> a -> Dict String a -> Dict String a
+mergeOnlyInRight =
+    Dict.insert
+
+
+mergeInBoth : String -> a -> b -> Dict String b -> Dict String b
+mergeInBoth key left right result =
+    Dict.insert key right result
 
 
 updateItemInEntities : String -> Person -> PersonEntities -> PersonEntities
