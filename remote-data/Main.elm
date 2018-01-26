@@ -178,35 +178,6 @@ mergeInBoth key left right result =
     Dict.insert key right result
 
 
-updateItemInEntities : String -> Person -> PersonEntities -> PersonEntities
-updateItemInEntities url update current =
-    Dict.insert
-        url
-        (Cache.updateCache
-            { updateEmpty = \x -> x
-            , updateFilled = \x y -> x
-            , patchFilled = \patchEvent current -> current
-            }
-            (Dict.get url current |> Maybe.withDefault Cache.Empty)
-            (Cache.Update update)
-        )
-        current
-
-
-updateEmptyItemInCollection : String -> Person -> Person -> PersonCollection
-updateEmptyItemInCollection url update current =
-    { entities = updateItemInEntities url update Dict.empty
-    , displayOrder = [ update.url ]
-    }
-
-
-updateFilledItemInCollection : String -> Person -> PersonCollection -> PersonCollection
-updateFilledItemInCollection url update current =
-    { entities = updateItemInEntities url update current.entities
-    , displayOrder = current.displayOrder
-    }
-
-
 patchItem : String -> Cache.CacheEvent Http.Error Person a -> PersonCollection -> PersonCollection
 patchItem url cacheEvent personCollection =
     let
